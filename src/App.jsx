@@ -811,7 +811,9 @@ function App() {
           setPage("live-roulette")
         }
 
-        onClick={() => setPage("support")}
+        onCustomerSupport={() =>
+  setPage("customer-support")
+}
       />
     );
   }
@@ -928,6 +930,7 @@ function App() {
       onBack={() => setPage("home")}
     />
   );
+  
 }
 
   return null;
