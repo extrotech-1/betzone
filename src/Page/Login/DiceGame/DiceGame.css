@@ -1,0 +1,754 @@
+* {
+  box-sizing: border-box;
+}
+
+.dice-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      #202b3d 0%,
+      #0b1017 45%,
+      #080c12 100%
+    );
+  color: #fff;
+  overflow-x: hidden;
+}
+
+.dice-header {
+  height: 70px;
+  padding: 0 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: rgba(10, 15, 22, 0.96);
+  border-bottom: 1px solid #293342;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(12px);
+}
+
+.dice-back {
+  border: 1px solid #303b4c;
+  background: #161e29;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.dice-back:hover {
+  border-color: #f5b400;
+}
+
+.dice-logo {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.dice-logo span {
+  color: #f5b400;
+  margin-left: 3px;
+}
+
+.dice-header-balance {
+  padding: 10px 15px;
+  background: #151e29;
+  border: 1px solid #303b4c;
+  border-radius: 8px;
+  color: #f5b400;
+  font-weight: 800;
+}
+
+.dice-container {
+  width: min(900px, calc(100% - 30px));
+  margin: 0 auto;
+  padding: 35px 0 60px;
+}
+
+/* =========================
+   BALANCE MODE
+========================= */
+
+.dice-mode-panel {
+  width: 100%;
+  padding: 22px;
+  margin-bottom: 30px;
+  background:
+    linear-gradient(
+      145deg,
+      #151e29,
+      #0e151e
+    );
+  border: 1px solid #303b4c;
+  border-radius: 16px;
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.25);
+}
+
+.dice-mode-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 16px;
+}
+
+.dice-mode-heading span {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.dice-mode-heading small {
+  color: #7f8b9d;
+  font-size: 13px;
+}
+
+.dice-mode-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dice-mode-btn {
+  min-height: 75px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #354153;
+  border-radius: 11px;
+  background: #111923;
+  color: #c6cfdb;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s;
+}
+
+.dice-mode-btn strong {
+  font-size: 14px;
+}
+
+.dice-mode-btn small {
+  color: #7e8b9c;
+}
+
+.dice-mode-btn:hover {
+  border-color: #f5b400;
+  transform: translateY(-1px);
+}
+
+.dice-mode-btn.active {
+  background:
+    linear-gradient(
+      135deg,
+      #f5b400,
+      #ffc82d
+    );
+  border-color: #f5b400;
+  color: #111;
+  box-shadow:
+    0 8px 25px rgba(245, 180, 0, 0.18);
+}
+
+.dice-mode-btn.active small {
+  color: #3c2d00;
+}
+
+.dice-current-balance {
+  margin-top: 15px;
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0a1017;
+  border: 1px solid #222d3b;
+  border-radius: 9px;
+}
+
+.dice-current-balance span {
+  color: #788598;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.dice-current-balance strong {
+  color: #f5b400;
+}
+
+/* =========================
+   TITLE
+========================= */
+
+.dice-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.dice-title-icon {
+  width: 55px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #171f2b;
+  border: 1px solid #303b4c;
+  border-radius: 14px;
+  font-size: 30px;
+}
+
+.dice-title h1 {
+  margin: 0;
+  font-size: 34px;
+}
+
+.dice-title p {
+  margin: 5px 0 0;
+  color: #8490a2;
+}
+
+/* =========================
+   BOARD
+========================= */
+
+.dice-board {
+  min-height: 360px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(
+      circle at center,
+      #1b2838,
+      #0c131c 70%
+    );
+  border: 1px solid #303b4c;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.25),
+    0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.dice {
+  width: 145px;
+  height: 145px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 25px;
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #d9dee6
+    );
+  color: #10151d;
+  font-size: 70px;
+  font-weight: 900;
+  box-shadow:
+    0 20px 45px rgba(0, 0, 0, 0.4);
+  user-select: none;
+}
+
+.dice-rolling {
+  animation: diceRoll 0.18s infinite;
+}
+
+@keyframes diceRoll {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  25% {
+    transform: rotate(8deg) scale(1.04);
+  }
+
+  50% {
+    transform: rotate(-8deg) scale(0.97);
+  }
+
+  75% {
+    transform: rotate(5deg) scale(1.04);
+  }
+
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.dice-result {
+  margin-top: 30px;
+  color: #f5b400;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+/* =========================
+   CONTROLS
+========================= */
+
+.dice-controls {
+  margin-top: 20px;
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+  background: #111822;
+  border: 1px solid #303b4c;
+  border-radius: 16px;
+}
+
+.dice-input-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #8d99aa;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.dice-input {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #0b1119;
+  border: 1px solid #303b4c;
+  border-radius: 9px;
+}
+
+.dice-input span {
+  padding-left: 14px;
+  color: #f5b400;
+  font-weight: 900;
+}
+
+.dice-input input {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+}
+
+.choice-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.choice-buttons button {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid #303b4c;
+  border-radius: 9px;
+  background: #171f2b;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.choice-buttons button small {
+  color: #7e8b9c;
+}
+
+.choice-buttons button:hover {
+  border-color: #f5b400;
+}
+
+.choice-buttons .choice-active {
+  background: #f5b400;
+  border-color: #f5b400;
+  color: #111;
+}
+
+.choice-buttons .choice-active small {
+  color: #4c3800;
+}
+
+.roll-button {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      135deg,
+      #f5b400,
+      #ffc82d
+    );
+  color: #111;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.roll-button:hover {
+  filter: brightness(1.08);
+}
+
+.roll-button:disabled,
+.reset-button:disabled,
+.dice-mode-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.reset-button {
+  padding: 12px;
+  border: 1px solid #354153;
+  border-radius: 9px;
+  background: #171f2b;
+  color: #aeb8c6;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.reset-button:hover {
+  border-color: #f5b400;
+  color: #fff;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+.dice-status-box {
+  margin-top: 20px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  background: #111822;
+  border: 1px solid #252f3d;
+  border-radius: 14px;
+}
+
+.dice-status-box div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dice-status-box span {
+  color: #778496;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.dice-status-box strong {
+  color: #f5b400;
+}
+
+/* =========================
+   HOW TO PLAY
+========================= */
+
+.dice-info {
+  margin-top: 35px;
+}
+
+.dice-info h2 {
+  margin-bottom: 18px;
+}
+
+.dice-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.dice-steps > div {
+  padding: 20px;
+  background: #111822;
+  border: 1px solid #252f3d;
+  border-radius: 12px;
+}
+
+.dice-steps strong {
+  color: #f5b400;
+  font-size: 13px;
+}
+
+.dice-steps h3 {
+  margin: 12px 0 8px;
+}
+
+.dice-steps p {
+  margin: 0;
+  color: #7e8b9c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 650px) {
+  .dice-header {
+    padding: 0 12px;
+  }
+
+  .dice-logo {
+    font-size: 19px;
+  }
+
+  .dice-header-balance {
+    padding: 8px 9px;
+    font-size: 11px;
+  }
+
+  .dice-container {
+    width: calc(100% - 20px);
+    padding-top: 20px;
+  }
+
+  .dice-mode-panel {
+    padding: 15px;
+  }
+
+  .dice-mode-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .dice-current-balance {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+  }
+
+  .dice-board {
+    min-height: 300px;
+  }
+
+  .dice {
+    width: 115px;
+    height: 115px;
+    font-size: 55px;
+  }
+
+  .dice-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .dice-status-box {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .dice-back {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .dice-header-balance {
+    font-size: 10px;
+  }
+
+  .dice-title h1 {
+    font-size: 28px;
+  }
+
+  .dice-result {
+    font-size: 13px;
+    text-align: center;
+  }
+}
+/* =========================
+   DICE MODE SWITCH - FIX
+========================= */
+
+.dice-mode-switch {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 6px;
+  margin-bottom: 14px;
+  background: #0b1119;
+  border: 1px solid #303b4c;
+  border-radius: 12px;
+}
+
+.dice-mode-switch button {
+  min-height: 52px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: #151e29;
+  color: #aeb8c6;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.dice-mode-switch button:hover {
+  color: #fff;
+  border-color: #f5b400;
+}
+
+.dice-mode-switch .dice-mode-active {
+  background: linear-gradient(
+    135deg,
+    #f5b400,
+    #ffc82d
+  );
+  color: #111;
+  border-color: #f5b400;
+  box-shadow:
+    0 8px 25px rgba(245, 180, 0, 0.18);
+}
+
+/* =========================
+   CURRENT BALANCE INFO
+========================= */
+
+.dice-mode-info {
+  width: 100%;
+  min-height: 55px;
+  margin-bottom: 25px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  background: #111822;
+  border: 1px solid #303b4c;
+  border-radius: 10px;
+
+  color: #8995a7;
+  font-size: 13px;
+}
+
+.dice-mode-info strong {
+  color: #f5b400;
+  font-size: 15px;
+}
+
+.dice-mode-info span {
+  margin-left: auto;
+  color: #667487;
+  font-size: 11px;
+}
+
+.dice-mode-info button {
+  margin-left: auto;
+  padding: 7px 12px;
+  border: 1px solid #354153;
+  border-radius: 7px;
+  background: #171f2b;
+  color: #aeb8c6;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dice-mode-info button:hover {
+  border-color: #f5b400;
+  color: #f5b400;
+}
+
+/* =========================
+   ACCOUNT PREVIEW NOTICE
+========================= */
+
+.account-demo-note {
+  padding: 12px 14px;
+  border: 1px solid #354153;
+  border-radius: 9px;
+  background: #0b1119;
+  color: #8995a7;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================
+   HEADER BALANCE FIX
+========================= */
+
+.dice-balance {
+  padding: 10px 15px;
+  background: #151e29;
+  border: 1px solid #303b4c;
+  border-radius: 8px;
+  color: #f5b400;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* =========================
+   DISABLED ACCOUNT CONTROLS
+========================= */
+
+.dice-input input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.roll-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 650px) {
+
+  .dice-mode-switch {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dice-mode-switch button {
+    min-height: 48px;
+  }
+
+  .dice-mode-info {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dice-mode-info button,
+  .dice-mode-info span {
+    margin-left: 0;
+  }
+
+}
+
+@media (max-width: 430px) {
+
+  .dice-mode-switch button {
+    font-size: 11px;
+    padding: 10px;
+  }
+
+  .dice-mode-info {
+    font-size: 12px;
+  }
+
+}

@@ -1,0 +1,1132 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #05080d;
+  color: #ffffff;
+  font-family:
+    Inter,
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+button {
+  font-family: inherit;
+}
+
+.home-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(245, 180, 0, 0.07),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 85% 20%,
+      rgba(30, 120, 255, 0.06),
+      transparent 30%
+    ),
+    #05080d;
+  color: #fff;
+}
+
+/* =========================================================
+   OFFER POPUP
+========================================================= */
+
+.offer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(5px);
+}
+
+.offer-modal {
+  position: relative;
+  width: min(430px, 100%);
+  max-height: 94vh;
+  overflow: hidden;
+  background: #080d15;
+  border: 1px solid #293445;
+  border-radius: 14px;
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.75);
+}
+
+.offer-close {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 10;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.offer-close:hover {
+  background: #f5b400;
+  color: #080b10;
+}
+
+.offer-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 82vh;
+  object-fit: contain;
+}
+
+.offer-image-error {
+  min-height: 300px;
+  padding: 30px 20px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  color: #fff;
+}
+
+.offer-error-icon {
+  margin-bottom: 12px;
+  font-size: 40px;
+}
+
+.offer-image-error p {
+  color: #9ba6b5;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.offer-image-error b {
+  color: #f5b400;
+}
+
+.offer-footer {
+  padding: 10px;
+  background: #080d15;
+}
+
+.offer-footer button {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  background: #f5b400;
+  color: #080b10;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.offer-footer button:hover {
+  background: #ffc928;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.home-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  min-height: 62px;
+  padding: 9px 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: rgba(6, 10, 16, 0.96);
+  border-bottom: 1px solid #1d2633;
+  backdrop-filter: blur(12px);
+}
+
+.home-logo {
+  flex-shrink: 0;
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 950;
+  letter-spacing: -0.7px;
+}
+
+.home-logo span {
+  color: #f5b400;
+}
+
+.home-nav {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+
+.home-nav button,
+.header-actions button,
+.section-heading button,
+.footer-links button {
+  border: 1px solid #222d3c;
+  background: #0d141e;
+  color: #cdd6e2;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.home-nav button {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.home-nav button:hover,
+.header-actions button:hover {
+  border-color: #f5b400;
+  color: #f5b400;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-actions button {
+  padding: 8px 10px;
+  font-size: 11px;
+}
+
+.header-actions .balance {
+  color: #f5b400;
+  font-weight: 800;
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero-section {
+  width: min(1120px, calc(100% - 28px));
+  margin: 30px auto 0;
+  min-height: 350px;
+  padding: 30px;
+  display: grid;
+  grid-template-columns: 1.35fr 0.65fr;
+  align-items: center;
+  gap: 25px;
+  background:
+    radial-gradient(
+      circle at 90% 10%,
+      rgba(245, 180, 0, 0.08),
+      transparent 35%
+    ),
+    #080d14;
+  border: 1px solid #1d2735;
+  border-radius: 16px;
+}
+
+.hero-content {
+  max-width: 680px;
+}
+
+.hero-tag {
+  display: inline-flex;
+  padding: 7px 10px;
+  border: 1px solid #3b3218;
+  border-radius: 20px;
+  background: #15130b;
+  color: #f5b400;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.7px;
+}
+
+.hero-content h1 {
+  margin: 15px 0 10px;
+  font-size: clamp(35px, 5vw, 58px);
+  line-height: 0.98;
+  letter-spacing: -2px;
+}
+
+.hero-content h1 strong {
+  color: #f5b400;
+}
+
+.hero-content p {
+  max-width: 580px;
+  margin: 0;
+  color: #8794a5;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.primary-btn,
+.secondary-btn {
+  border-radius: 8px;
+  padding: 11px 15px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-btn {
+  border: 1px solid #f5b400;
+  background: #f5b400;
+  color: #080b10;
+}
+
+.primary-btn:hover {
+  background: #ffc928;
+}
+
+.secondary-btn {
+  border: 1px solid #2a3647;
+  background: #101822;
+  color: #d7dfeb;
+}
+
+.secondary-btn:hover {
+  border-color: #f5b400;
+  color: #f5b400;
+}
+
+.hero-card {
+  padding: 22px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(245, 180, 0, 0.08),
+      transparent 50%
+    ),
+    #0c131d;
+  border: 1px solid #222e3d;
+  border-radius: 13px;
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.25);
+}
+
+.hero-card-icon {
+  width: 45px;
+  height: 45px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  background: #1d1909;
+  color: #f5b400;
+  font-size: 23px;
+}
+
+.hero-card h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.hero-card p {
+  margin: 0 0 15px;
+  color: #8290a3;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.section {
+  width: min(1120px, calc(100% - 28px));
+  margin: 30px auto 0;
+}
+
+.section-heading {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.4px;
+}
+
+.section-heading button {
+  padding: 7px 10px;
+  font-size: 11px;
+}
+
+.section-heading button:hover {
+  border-color: #f5b400;
+  color: #f5b400;
+}
+
+.section-subtitle {
+  margin: 5px 0 0;
+  color: #788698;
+  font-size: 11px;
+}
+
+/* =========================================================
+   CATEGORIES
+========================================================= */
+
+.category-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.category-card {
+  min-height: 75px;
+  padding: 12px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #1c2735;
+  border-radius: 9px;
+  background: #090f17;
+  color: #dbe3ee;
+  cursor: pointer;
+}
+
+.category-card:hover {
+  border-color: #f5b400;
+  transform: translateY(-2px);
+}
+
+.category-icon {
+  font-size: 22px;
+}
+
+.category-card span {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   CARD GAMES
+========================================================= */
+
+.card-games-section {
+  scroll-margin-top: 75px;
+}
+
+.coming-badge {
+  padding: 6px 9px;
+  border: 1px solid #493b12;
+  border-radius: 20px;
+  background: #181407;
+  color: #f5b400;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.card-game-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.card-game-item {
+  position: relative;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #202c3a;
+  border-radius: 11px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.025),
+      transparent
+    ),
+    #0a1018;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card-game-item:hover {
+  transform: translateY(-4px);
+  border-color: #f5b400;
+  box-shadow:
+    0 13px 28px rgba(0, 0, 0, 0.4);
+}
+
+.playing-card-back {
+  position: relative;
+  height: 145px;
+  padding: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 9px;
+  background:
+    linear-gradient(
+      135deg,
+      #f4f4f4,
+      #d9d9d9
+    );
+  color: #111;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.8);
+  transform:
+    perspective(500px)
+    rotateX(2deg);
+}
+
+.playing-card-back::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.playing-card-back::after {
+  content: "";
+  position: absolute;
+  width: 105px;
+  height: 105px;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+.card-corner {
+  position: absolute;
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.card-corner.top {
+  top: 12px;
+  left: 12px;
+}
+
+.card-corner.bottom {
+  right: 12px;
+  bottom: 12px;
+  transform: rotate(180deg);
+}
+
+.card-logo {
+  position: relative;
+  z-index: 2;
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 950;
+  text-shadow:
+    1px 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.card-name {
+  position: relative;
+  z-index: 2;
+  margin-top: 7px;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 1px;
+}
+
+/* Different card identities */
+
+.poker-card .playing-card-back,
+.spades-card .playing-card-back {
+  background:
+    linear-gradient(
+      145deg,
+      #f7f7f7,
+      #dce8f2
+    );
+  color: #172232;
+}
+
+.solitaire-card .playing-card-back,
+.hearts-card .playing-card-back {
+  background:
+    linear-gradient(
+      145deg,
+      #fff7f7,
+      #f0dede
+    );
+  color: #c93643;
+}
+
+.uno-card .playing-card-back {
+  background:
+    linear-gradient(
+      145deg,
+      #d92828,
+      #8e1118
+    );
+  color: #fff;
+}
+
+.rummy-card .playing-card-back {
+  background:
+    linear-gradient(
+      145deg,
+      #f4f0ff,
+      #ddd4ef
+    );
+  color: #5a3c9c;
+}
+
+.blackjack-card .playing-card-back {
+  background:
+    linear-gradient(
+      145deg,
+      #111d31,
+      #182c48
+    );
+  color: #f5b400;
+}
+
+.bridge-card .playing-card-back {
+  background:
+    linear-gradient(
+      145deg,
+      #eef8f2,
+      #d2e7da
+    );
+  color: #23603c;
+}
+
+.cribbage-card .playing-card-back {
+  background:
+    linear-gradient(
+      145deg,
+      #f5ead9,
+      #dfc5a0
+    );
+  color: #6e4925;
+}
+
+.cah-card .playing-card-back {
+  background:
+    linear-gradient(
+      145deg,
+      #222,
+      #080808
+    );
+  color: #fff;
+}
+
+.card-game-info {
+  padding: 9px 2px 2px;
+}
+
+.card-game-info h3 {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.card-game-info p {
+  min-height: 28px;
+  margin: 4px 0 7px;
+  color: #788698;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.card-coming {
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: 5px;
+  background: #171407;
+  color: #f5b400;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+/* =========================================================
+   FAST GAMES
+========================================================= */
+
+.game-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.game-card {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #1d2836;
+  border-radius: 10px;
+  background: #0a1018;
+}
+
+.game-card:hover {
+  border-color: #344357;
+}
+
+.game-image {
+  height: 105px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background:
+    radial-gradient(
+      circle,
+      rgba(245, 180, 0, 0.15),
+      transparent 65%
+    ),
+    #111923;
+  border: 1px solid #202d3c;
+}
+
+.game-image span {
+  font-size: 39px;
+  filter:
+    drop-shadow(
+      0 5px 8px rgba(0, 0, 0, 0.5)
+    );
+}
+
+.live-icon {
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 45, 60, 0.18),
+      transparent 65%
+    ),
+    #111923;
+}
+
+.live-icon span {
+  color: #ff5965;
+  font-size: 16px;
+  font-weight: 950;
+  letter-spacing: 1px;
+}
+
+.game-card h3 {
+  margin: 9px 0 4px;
+  font-size: 13px;
+}
+
+.game-card p {
+  min-height: 30px;
+  margin: 0 0 8px;
+  color: #788698;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.game-card button {
+  width: 100%;
+  border: 1px solid #283547;
+  border-radius: 6px;
+  padding: 7px;
+  background: #101822;
+  color: #d8e0ea;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.game-card button:hover {
+  border-color: #f5b400;
+  color: #f5b400;
+}
+
+/* =========================================================
+   ESPORTS
+========================================================= */
+
+.esports-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.esports-card {
+  padding: 14px;
+  border: 1px solid #1d2836;
+  border-radius: 10px;
+  background: #0a1018;
+}
+
+.esports-card span {
+  color: #f5b400;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.esports-card h3 {
+  margin: 8px 0 12px;
+  font-size: 13px;
+}
+
+.esports-card button {
+  border: 1px solid #283547;
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: #101822;
+  color: #cfd8e5;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+footer {
+  width: min(1120px, calc(100% - 28px));
+  margin: 45px auto 0;
+  padding: 25px 0 35px;
+  border-top: 1px solid #1b2532;
+}
+
+footer p {
+  margin: 7px 0 13px;
+  color: #667487;
+  font-size: 11px;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.footer-links button {
+  padding: 6px 9px;
+  font-size: 10px;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+  .home-header {
+    flex-wrap: wrap;
+  }
+
+  .home-nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .header-actions {
+    margin-left: auto;
+  }
+
+  .hero-section {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .hero-card {
+    display: none;
+  }
+
+  .category-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .card-game-grid {
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+  }
+
+  .game-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .esports-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+  .home-header {
+    position: sticky;
+    padding: 8px 10px;
+    gap: 7px;
+  }
+
+  .home-logo {
+    font-size: 18px;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+
+  .header-actions .balance {
+    max-width: 112px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .header-actions button {
+    padding: 7px 8px;
+    font-size: 10px;
+  }
+
+  .home-nav {
+    gap: 4px;
+  }
+
+  .home-nav button {
+    flex-shrink: 0;
+    padding: 6px 9px;
+    font-size: 10px;
+  }
+
+  .hero-section {
+    width: calc(100% - 16px);
+    margin-top: 12px;
+    padding: 19px 15px;
+    border-radius: 12px;
+  }
+
+  .hero-content h1 {
+    margin-top: 12px;
+    font-size: 35px;
+    letter-spacing: -1.5px;
+  }
+
+  .hero-content p {
+    font-size: 12px;
+  }
+
+  .hero-buttons {
+    margin-top: 14px;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    padding: 9px 11px;
+    font-size: 10px;
+  }
+
+  .section {
+    width: calc(100% - 16px);
+    margin-top: 22px;
+  }
+
+  .section-heading {
+    margin-bottom: 9px;
+  }
+
+  .section-heading h2 {
+    font-size: 17px;
+  }
+
+  .category-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .category-card {
+    min-height: 63px;
+    padding: 7px 4px;
+    border-radius: 7px;
+  }
+
+  .category-icon {
+    font-size: 18px;
+  }
+
+  .category-card span {
+    font-size: 9px;
+  }
+
+  /* 2 columns on mobile */
+
+  .card-game-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .card-game-item {
+    padding: 6px;
+    border-radius: 8px;
+  }
+
+  .playing-card-back {
+    height: 130px;
+  }
+
+  .card-logo {
+    font-size: 31px;
+  }
+
+  .card-corner {
+    font-size: 10px;
+  }
+
+  .card-name {
+    font-size: 8px;
+  }
+
+  .card-game-info {
+    padding: 7px 2px 1px;
+  }
+
+  .card-game-info h3 {
+    font-size: 11px;
+  }
+
+  .card-game-info p {
+    min-height: 26px;
+    font-size: 9px;
+  }
+
+  .card-coming {
+    padding: 3px 5px;
+    font-size: 8px;
+  }
+
+  .coming-badge {
+    font-size: 8px;
+    padding: 5px 7px;
+  }
+
+  .game-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .game-card {
+    padding: 7px;
+    border-radius: 8px;
+  }
+
+  .game-image {
+    height: 92px;
+  }
+
+  .game-image span {
+    font-size: 32px;
+  }
+
+  .game-card h3 {
+    font-size: 11px;
+  }
+
+  .game-card p {
+    font-size: 9px;
+  }
+
+  .game-card button {
+    padding: 6px;
+    font-size: 9px;
+  }
+
+  .esports-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .esports-card {
+    padding: 10px;
+  }
+
+  .esports-card h3 {
+    font-size: 11px;
+  }
+
+  footer {
+    width: calc(100% - 16px);
+  }
+}
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 380px) {
+
+  .header-actions .balance {
+    display: none;
+  }
+
+  .hero-content h1 {
+    font-size: 31px;
+  }
+
+  .playing-card-back {
+    height: 118px;
+  }
+
+  .card-logo {
+    font-size: 27px;
+  }
+
+  .card-game-info h3 {
+    font-size: 10px;
+  }
+
+  .game-image {
+    height: 82px;
+  }
+
+  .game-image span {
+    font-size: 28px;
+  }
+}
