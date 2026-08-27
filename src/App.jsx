@@ -13,6 +13,7 @@ import MinesGame from "./Page/Login/MinesGame/MinesGame";
 
 import AdminPaymentMethods from "./Page/Login/Admin/AdminPaymentMethods";
 import AdminDepositRequests from "./Page/Login/Admin/AdminDepositRequests";
+import CustomerSupport from "./Page/Login/CustomerSupport/CustomerSupport";
 
 import "./App.css";
 
@@ -809,6 +810,8 @@ function App() {
         onLiveRoulette={() =>
           setPage("live-roulette")
         }
+
+        onClick={() => setPage("support")}
       />
     );
   }
@@ -918,6 +921,14 @@ function App() {
       />
     );
   }
+
+  if (page === "support") {
+  return (
+    <CustomerSupport
+      onBack={() => setPage("home")}
+    />
+  );
+}
 
   return null;
 }
