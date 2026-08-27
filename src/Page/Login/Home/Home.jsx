@@ -268,7 +268,7 @@ function Home({
             </button>
 
             <img
-              src="/offer.png"
+              src="/offer.png.jpg"
               alt="Welcome offer"
               className="offer-image"
               onError={(event) => {
