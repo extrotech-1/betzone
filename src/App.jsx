@@ -721,7 +721,11 @@ function LiveRoulettePage({ onBack }) {
 ========================================================= */
 
 function App() {
-  const [page, setPage] = useState("login");
+  const [page, setPage] = useState(
+  localStorage.getItem("isLoggedIn") === "true"
+    ? "home"
+    : "login"
+);
 
   const path = window.location.pathname;
 
@@ -745,14 +749,13 @@ function App() {
      LOGIN
   ===================================================== */
 
-  if (page === "login") {
-    return (
-      <Login
-        onLogin={() => setPage("home")}
-        onRegister={() => setPage("register")}
-      />
-    );
-  }
+<Login
+  onLogin={() => {
+    localStorage.setItem("isLoggedIn", "true");
+    setPage("home");
+  }}
+  onRegister={() => setPage("register")}
+/>
 
   /* =====================================================
      REGISTER
@@ -774,7 +777,10 @@ function App() {
   if (page === "home") {
     return (
       <Home
-        onLogout={() => setPage("login")}
+        onLogout={() => {
+  localStorage.removeItem("isLoggedIn");
+  setPage("login");
+}}
 
         onAccount={() =>
           setPage("account")
