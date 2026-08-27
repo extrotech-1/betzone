@@ -748,14 +748,22 @@ function App() {
   /* =====================================================
      LOGIN
   ===================================================== */
+  /* =====================================================
+     LOGIN
+  ===================================================== */
 
-<Login
-  onLogin={() => {
-    localStorage.setItem("isLoggedIn", "true");
-    setPage("home");
-  }}
-  onRegister={() => setPage("register")}
-/>
+  if (page === "login") {
+    return (
+      <Login
+        onLogin={() => {
+          localStorage.setItem("isLoggedIn", "true");
+          setPage("home");
+        }}
+        onRegister={() => setPage("register")}
+      />
+    );
+  }
+
 
   /* =====================================================
      REGISTER
