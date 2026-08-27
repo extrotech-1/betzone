@@ -924,13 +924,13 @@ function App() {
     );
   }
 
-  if (page === "support") {
+  if (page === "customer-support") {
   return (
     <CustomerSupport
       onBack={() => setPage("home")}
     />
   );
-  
+
 }
 
   return null;
