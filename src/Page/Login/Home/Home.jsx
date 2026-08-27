@@ -160,6 +160,7 @@ function Home({
   onDiceGame,
   onMinesGame,
   onLiveRoulette,
+  onCustomerSupport,
 }) {
   const [showOffer, setShowOffer] = useState(true);
 
@@ -888,15 +889,15 @@ function Home({
           </button>
 
           <button
-            type="button"
-            onClick={() =>
-              alert(
-                "Support page coming soon."
-              )
-            }
-          >
-            Support
-          </button>
+  type="button"
+  onClick={() =>
+    alert(
+      "Support page coming soon."
+    )
+  }
+>
+  Support
+</button>
 
           <button
             type="button"
