@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import "./AdminDepositRequests.css";
+import { supabase } from "../../../supabaseClient";
 
-function loadRequests() {
+/* =========================================================
+   LOCAL STORAGE
+========================================================= */
+
+function loadLocalRequests() {
   try {
     const saved = JSON.parse(
       localStorage.getItem("depositRequests") || "[]"
@@ -13,27 +18,260 @@ function loadRequests() {
   }
 }
 
+function saveLocalRequests(requests) {
+  try {
+    localStorage.setItem(
+      "depositRequests",
+      JSON.stringify(requests)
+    );
+  } catch (error) {
+    console.error(
+      "Could not save local requests:",
+      error
+    );
+  }
+}
+
+/* =========================================================
+   NORMALIZE SUPABASE ROW
+========================================================= */
+
+function normalizeRow(row) {
+  return {
+    id: row.id,
+
+    // USER UUID
+    userId:
+      row.user_id ||
+      row.userId ||
+      "",
+
+    createdAt:
+      row.created_at ||
+      new Date().toISOString(),
+
+    status:
+      row.status ||
+      "Pending Verification",
+
+    methodId:
+      row.method_id || "",
+
+    methodName:
+      row.method_name ||
+      "Unknown",
+
+    category:
+      row.category || "",
+
+    network:
+      row.network || "",
+
+    amount:
+      Number(row.amount || 0),
+
+    currency:
+      row.currency || "NPR",
+
+    cryptoAmount:
+      row.crypto_amount ?? null,
+
+    exchangeRate:
+      row.exchange_rate ?? null,
+
+    walletAddress:
+      row.wallet_address || "",
+
+    senderAccount:
+      row.sender_account || "",
+
+    senderName:
+      row.sender_name || "",
+
+    transactionId:
+      row.transaction_id || "",
+
+    screenshotName:
+      row.screenshot_name || "",
+
+    screenshotSize:
+      Number(row.screenshot_size || 0),
+
+    reviewedAt:
+      row.reviewed_at || null,
+  };
+}
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+async function loadSupabaseRequests() {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("deposit_requests")
+    .select("*")
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return Array.isArray(data)
+    ? data.map(normalizeRow)
+    : [];
+}
+
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 function AdminDepositRequests() {
-  const [requests, setRequests] = useState(loadRequests);
-  const [filter, setFilter] = useState("All");
-  const [selectedId, setSelectedId] = useState(null);
-  const [notice, setNotice] = useState("");
+  const [requests, setRequests] =
+    useState(loadLocalRequests);
+
+  const [filter, setFilter] =
+    useState("All");
+
+  const [selectedId, setSelectedId] =
+    useState(null);
+
+  const [notice, setNotice] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [updatingId, setUpdatingId] =
+    useState(null);
+
+  /* =======================================================
+     LOAD REQUESTS
+  ======================================================= */
+
+  async function refreshRequests() {
+    try {
+      setLoading(true);
+      setNotice("");
+
+      const data =
+        await loadSupabaseRequests();
+
+      setRequests(data);
+
+      saveLocalRequests(data);
+
+      /*
+       * If currently selected request
+       * disappeared, clear selection.
+       */
+      if (
+        selectedId &&
+        !data.some(
+          (item) =>
+            item.id === selectedId
+        )
+      ) {
+        setSelectedId(null);
+      }
+    } catch (error) {
+      console.error(
+        "Could not load deposit requests:",
+        error
+      );
+
+      setNotice(
+        `Could not load Supabase requests: ${
+          error.message ||
+          "Unknown error"
+        }`
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* =======================================================
+     INITIAL LOAD
+  ======================================================= */
 
   useEffect(() => {
+    refreshRequests();
+
     const refresh = () => {
-      setRequests(loadRequests());
+      refreshRequests();
     };
 
-    window.addEventListener("storage", refresh);
-    window.addEventListener("deposit-request-created", refresh);
-    window.addEventListener("deposit-request-updated", refresh);
+    window.addEventListener(
+      "storage",
+      refresh
+    );
+
+    window.addEventListener(
+      "deposit-request-created",
+      refresh
+    );
+
+    window.addEventListener(
+      "deposit-request-updated",
+      refresh
+    );
 
     return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener("deposit-request-created", refresh);
-      window.removeEventListener("deposit-request-updated", refresh);
+      window.removeEventListener(
+        "storage",
+        refresh
+      );
+
+      window.removeEventListener(
+        "deposit-request-created",
+        refresh
+      );
+
+      window.removeEventListener(
+        "deposit-request-updated",
+        refresh
+      );
     };
   }, []);
+
+  /* =======================================================
+     SUPABASE REALTIME
+  ======================================================= */
+
+  useEffect(() => {
+    const channel =
+      supabase
+        .channel(
+          "admin-deposit-requests"
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "deposit_requests",
+          },
+          () => {
+            refreshRequests();
+          }
+        )
+        .subscribe();
+
+    return () => {
+      supabase.removeChannel(
+        channel
+      );
+    };
+  }, []);
+
+  /* =======================================================
+     FILTER
+  ======================================================= */
 
   const filtered = useMemo(() => {
     if (filter === "All") {
@@ -41,193 +279,287 @@ function AdminDepositRequests() {
     }
 
     return requests.filter(
-      (request) => request.status === filter
+      (request) =>
+        request.status === filter
     );
   }, [requests, filter]);
 
-  const selected = requests.find(
-    (request) => request.id === selectedId
-  );
+  /* =======================================================
+     SELECTED
+  ======================================================= */
 
-  // ==========================================
-  // APPROVE / REJECT / PENDING
-  // ==========================================
-
-  function updateStatus(id, status) {
-    const currentRequests = loadRequests();
-
-    const request = currentRequests.find(
-      (r) => r.id === id
+  const selected =
+    requests.find(
+      (request) =>
+        request.id === selectedId
     );
+
+  /* =======================================================
+     UPDATE STATUS
+  ======================================================= */
+
+  async function updateStatus(
+    id,
+    newStatus
+  ) {
+    if (updatingId) {
+      return;
+    }
+
+    const request =
+      requests.find(
+        (item) =>
+          item.id === id
+      );
 
     if (!request) {
-      setNotice("Deposit request not found.");
+      setNotice(
+        "Deposit request not found."
+      );
+
       return;
     }
 
-    const oldStatus = request.status;
+    if (
+      request.status ===
+      newStatus
+    ) {
+      setNotice(
+        `Request ${id} is already ${newStatus}.`
+      );
 
-    // Same status - nothing to do
-    if (oldStatus === status) {
       return;
     }
 
-    let currentBalance = Number(
-      localStorage.getItem("userBalance") || "0"
-    );
-
-    const depositAmount =
-      Number(request.amount) || 0;
-
-    // ------------------------------------------
-    // PENDING -> APPROVED
-    // ADD MONEY
-    // ------------------------------------------
+    /* APPROVE CONFIRMATION */
 
     if (
-      oldStatus === "Pending Verification" &&
-      status === "Approved"
+      newStatus === "Approved"
     ) {
-      currentBalance += depositAmount;
+      const confirmed =
+        window.confirm(
+          `Approve deposit request ${id}?\n\n` +
+          `User ID: ${
+            request.userId ||
+            "Not available"
+          }\n\n` +
+          `Amount: ${Number(
+            request.amount
+          ).toLocaleString()} ${
+            request.currency
+          }\n\n` +
+          `This will only update the deposit request status.`
+        );
+
+      if (!confirmed) {
+        return;
+      }
     }
 
-    // ------------------------------------------
-    // APPROVED -> PENDING
-    // REMOVE MONEY
-    // ------------------------------------------
+    /* REJECT CONFIRMATION */
 
     if (
-      oldStatus === "Approved" &&
-      status === "Pending Verification"
+      newStatus === "Rejected"
     ) {
-      currentBalance -= depositAmount;
+      const confirmed =
+        window.confirm(
+          `Reject deposit request ${id}?\n\n` +
+          `User ID: ${
+            request.userId ||
+            "Not available"
+          }`
+        );
+
+      if (!confirmed) {
+        return;
+      }
     }
 
-    // ------------------------------------------
-    // APPROVED -> REJECTED
-    // REMOVE MONEY
-    // ------------------------------------------
+    try {
+      setUpdatingId(id);
+      setNotice("");
 
-    if (
-      oldStatus === "Approved" &&
-      status === "Rejected"
-    ) {
-      currentBalance -= depositAmount;
+      const reviewedAt =
+        new Date().toISOString();
+
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("deposit_requests")
+        .update({
+          status: newStatus,
+          reviewed_at: reviewedAt,
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const updated =
+        normalizeRow(data);
+
+      const nextRequests =
+        requests.map(
+          (item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  ...updated,
+                }
+              : item
+        );
+
+      setRequests(
+        nextRequests
+      );
+
+      saveLocalRequests(
+        nextRequests
+      );
+
+      window.dispatchEvent(
+        new Event(
+          "deposit-request-updated"
+        )
+      );
+
+      setNotice(
+        `Request ${id} marked as ${newStatus}.`
+      );
+    } catch (error) {
+      console.error(
+        "Status update failed:",
+        error
+      );
+
+      setNotice(
+        `Could not update request: ${
+          error.message ||
+          "Unknown error"
+        }`
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  /* =======================================================
+     CLEAR LOCAL CACHE
+  ======================================================= */
+
+  function clearLocalCache() {
+    const confirmed =
+      window.confirm(
+        "Clear only the local browser cache? Supabase requests will NOT be deleted."
+      );
+
+    if (!confirmed) {
+      return;
     }
 
-    // ------------------------------------------
-    // REJECTED -> APPROVED
-    // ADD MONEY
-    // ------------------------------------------
-
-    if (
-      oldStatus === "Rejected" &&
-      status === "Approved"
-    ) {
-      currentBalance += depositAmount;
-    }
-
-    // ------------------------------------------
-    // PENDING -> REJECTED
-    // No balance change
-    // ------------------------------------------
-
-    // ------------------------------------------
-    // REJECTED -> PENDING
-    // No balance change
-    // ------------------------------------------
-
-    // Balance negative nahi hone denge
-    if (currentBalance < 0) {
-      currentBalance = 0;
-    }
-
-    // Save balance
-    localStorage.setItem(
-      "userBalance",
-      currentBalance.toString()
+    localStorage.removeItem(
+      "depositRequests"
     );
 
-    // Update request status
-    const next = currentRequests.map((r) =>
-      r.id === id
-        ? {
-            ...r,
-            status,
-            reviewedAt: new Date().toISOString(),
-          }
-        : r
-    );
-
-    // Update React state
-    setRequests(next);
-
-    // Save requests
-    localStorage.setItem(
-      "depositRequests",
-      JSON.stringify(next)
-    );
-
-    // Show notification
     setNotice(
-      `Request ${id} marked as ${status}. Balance: NPR ${currentBalance.toLocaleString(
-        "en-NP",
-        {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }
-      )}`
+      "Local request cache cleared."
     );
 
-    // Tell other components to refresh
-    window.dispatchEvent(
-      new Event("deposit-request-updated")
-    );
-
-    window.dispatchEvent(
-      new Event("balance-updated")
-    );
+    refreshRequests();
   }
 
-  // ==========================================
-  // CLEAR REQUESTS
-  // ==========================================
-
-  function clearRequests() {
-    if (
-      !window.confirm(
-        "Delete all demo deposit requests from this browser?"
-      )
-    ) {
-      return;
-    }
-
-    localStorage.removeItem("depositRequests");
-
-    setRequests([]);
-    setSelectedId(null);
-
-    setNotice("All demo requests deleted.");
-  }
-
-  // ==========================================
-  // STATUS CLASS
-  // ==========================================
+  /* =======================================================
+     HELPERS
+  ======================================================= */
 
   function statusClass(status) {
-    return status
+    return String(status || "")
       .toLowerCase()
       .replace(/\s+/g, "-");
   }
 
+  function formatAmount(
+    amount,
+    currency
+  ) {
+    const value =
+      Number(amount);
+
+    if (
+      !Number.isFinite(value)
+    ) {
+      return `0 ${
+        currency || ""
+      }`;
+    }
+
+    return `${value.toLocaleString(
+      "en-NP",
+      {
+        maximumFractionDigits: 8,
+      }
+    )} ${currency || ""}`;
+  }
+
+  function shortUserId(
+    userId
+  ) {
+    if (!userId) {
+      return "User ID unavailable";
+    }
+
+    if (userId.length <= 24) {
+      return userId;
+    }
+
+    return `${userId.slice(
+      0,
+      12
+    )}...${userId.slice(-8)}`;
+  }
+
+  async function copyUserId(
+    userId
+  ) {
+    if (!userId) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        userId
+      );
+
+      setNotice(
+        "User UUID copied."
+      );
+    } catch (error) {
+      console.error(
+        "Could not copy UUID:",
+        error
+      );
+    }
+  }
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
   return (
     <div className="requests-page">
 
-      {/* HEADER */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
       <header className="requests-header">
 
         <div>
+
           <div className="admin-label">
             ADMIN PANEL
           </div>
@@ -237,16 +569,21 @@ function AdminDepositRequests() {
           </h1>
 
           <p>
-            Review, approve or reject customer
+            Review and manage customer
             deposit submissions.
           </p>
+
         </div>
+
+        {/* STATS */}
 
         <div className="request-stats">
 
           <span>
-            <b>{requests.length}</b>
-            {" "}Total
+            <b>
+              {requests.length}
+            </b>{" "}
+            Total
           </span>
 
           <span>
@@ -258,8 +595,8 @@ function AdminDepositRequests() {
                     "Pending Verification"
                 ).length
               }
-            </b>
-            {" "}Pending
+            </b>{" "}
+            Pending
           </span>
 
           <span>
@@ -267,19 +604,34 @@ function AdminDepositRequests() {
               {
                 requests.filter(
                   (r) =>
-                    r.status === "Approved"
+                    r.status ===
+                    "Approved"
                 ).length
               }
-            </b>
-            {" "}Approved
+            </b>{" "}
+            Approved
+          </span>
+
+          <span>
+            <b>
+              {
+                requests.filter(
+                  (r) =>
+                    r.status ===
+                    "Rejected"
+                ).length
+              }
+            </b>{" "}
+            Rejected
           </span>
 
         </div>
 
       </header>
 
-
-      {/* TOOLBAR */}
+      {/* =================================================
+          TOOLBAR
+      ================================================= */}
 
       <div className="request-toolbar">
 
@@ -289,9 +641,9 @@ function AdminDepositRequests() {
           "Approved",
           "Rejected",
         ].map((item) => (
-
           <button
             key={item}
+            type="button"
             className={
               filter === item
                 ? "active"
@@ -303,20 +655,35 @@ function AdminDepositRequests() {
           >
             {item}
           </button>
-
         ))}
 
         <button
-          className="danger"
-          onClick={clearRequests}
+          type="button"
+          onClick={
+            refreshRequests
+          }
+          disabled={loading}
         >
-          Clear demo requests
+          {loading
+            ? "Refreshing..."
+            : "↻ Refresh"}
+        </button>
+
+        <button
+          type="button"
+          className="danger"
+          onClick={
+            clearLocalCache
+          }
+        >
+          Clear local cache
         </button>
 
       </div>
 
-
-      {/* NOTICE */}
+      {/* =================================================
+          NOTICE
+      ================================================= */}
 
       {notice && (
         <div className="request-notice">
@@ -324,16 +691,20 @@ function AdminDepositRequests() {
         </div>
       )}
 
-
-      {/* MAIN */}
+      {/* =================================================
+          LAYOUT
+      ================================================= */}
 
       <div className="requests-layout">
 
-        {/* REQUEST LIST */}
+        {/* =================================================
+            REQUEST LIST
+        ================================================= */}
 
         <section className="request-list">
 
-          {filtered.length === 0 ? (
+          {filtered.length ===
+          0 ? (
 
             <div className="empty-state">
 
@@ -346,88 +717,107 @@ function AdminDepositRequests() {
               </h3>
 
               <p>
-                New submissions will appear here.
+                New submissions will
+                appear here.
               </p>
 
             </div>
 
           ) : (
 
-            filtered.map((r) => (
+            filtered.map(
+              (request) => (
 
-              <button
-                key={r.id}
-                className={
-                  `request-row ${
-                    selectedId === r.id
-                      ? "selected"
-                      : ""
-                  }`
-                }
-                onClick={() =>
-                  setSelectedId(r.id)
-                }
-              >
-
-                <div className="request-main">
-
-                  <strong>
-                    {r.id}
-                  </strong>
-
-                  <span>
-                    {r.methodName}
-
-                    {r.network
-                      ? ` • ${r.network}`
-                      : ""}
-                  </span>
-
-                </div>
-
-
-                <div className="request-amount">
-
-                  {Number(
-                    r.amount
-                  ).toLocaleString()}
-
-                  {" "}
-
-                  {r.currency}
-
-                </div>
-
-
-                <span
+                <button
+                  key={request.id}
+                  type="button"
                   className={
-                    `status-pill ${
-                      statusClass(
-                        r.status
-                      )
+                    `request-row ${
+                      selectedId ===
+                      request.id
+                        ? "selected"
+                        : ""
                     }`
                   }
+                  onClick={() =>
+                    setSelectedId(
+                      request.id
+                    )
+                  }
                 >
-                  {r.status}
-                </span>
 
+                  {/* MAIN */}
 
-                <small>
-                  {new Date(
-                    r.createdAt
-                  ).toLocaleString()}
-                </small>
+                  <div className="request-main">
 
-              </button>
+                    <strong>
+                      {request.id}
+                    </strong>
 
-            ))
+                    <span>
+                      {request.methodName}
+
+                      {request.network
+                        ? ` • ${request.network}`
+                        : ""}
+                    </span>
+
+                    {/* USER UUID */}
+
+                    <small>
+                      User:{" "}
+                      {shortUserId(
+                        request.userId
+                      )}
+                    </small>
+
+                  </div>
+
+                  {/* AMOUNT */}
+
+                  <div className="request-amount">
+
+                    {formatAmount(
+                      request.amount,
+                      request.currency
+                    )}
+
+                  </div>
+
+                  {/* STATUS */}
+
+                  <span
+                    className={
+                      `status-pill ${
+                        statusClass(
+                          request.status
+                        )
+                      }`
+                    }
+                  >
+                    {request.status}
+                  </span>
+
+                  {/* DATE */}
+
+                  <small>
+                    {new Date(
+                      request.createdAt
+                    ).toLocaleString()}
+                  </small>
+
+                </button>
+
+              )
+            )
 
           )}
 
         </section>
 
-
-        {/* DETAILS */}
+        {/* =================================================
+            DETAIL
+        ================================================= */}
 
         <aside className="request-detail">
 
@@ -444,7 +834,7 @@ function AdminDepositRequests() {
 
             <>
 
-              {/* DETAIL HEADER */}
+              {/* DETAIL TOP */}
 
               <div className="detail-top">
 
@@ -460,7 +850,6 @@ function AdminDepositRequests() {
 
                 </div>
 
-
                 <span
                   className={
                     `status-pill ${
@@ -475,8 +864,53 @@ function AdminDepositRequests() {
 
               </div>
 
+              {/* =================================================
+                  USER INFORMATION
+              ================================================= */}
 
-              {/* DETAILS GRID */}
+              <div className="user-info-box">
+
+                <div className="user-info-title">
+                  👤 User Information
+                </div>
+
+                <div className="user-id-row">
+
+                  <div>
+
+                    <span>
+                      User UUID
+                    </span>
+
+                    <strong>
+                      {selected.userId ||
+                        "User ID not available"}
+                    </strong>
+
+                  </div>
+
+                  {selected.userId && (
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyUserId(
+                          selected.userId
+                        )
+                      }
+                    >
+                      Copy UUID
+                    </button>
+
+                  )}
+
+                </div>
+
+              </div>
+
+              {/* =================================================
+                  DETAIL GRID
+              ================================================= */}
 
               <div className="detail-grid">
 
@@ -484,6 +918,14 @@ function AdminDepositRequests() {
                   label="Payment Method"
                   value={
                     selected.methodName
+                  }
+                />
+
+                <Detail
+                  label="Category"
+                  value={
+                    selected.category ||
+                    "—"
                   }
                 />
 
@@ -496,32 +938,27 @@ function AdminDepositRequests() {
                 />
 
                 <Detail
-                  label="User Amount"
-                  value={
-                    `${Number(
-                      selected.amount
-                    ).toLocaleString()} ${
-                      selected.currency
-                    }`
-                  }
+                  label="Amount"
+                  value={formatAmount(
+                    selected.amount,
+                    selected.currency
+                  )}
                 />
 
                 <Detail
                   label="Crypto Amount"
                   value={
-                    selected.cryptoAmount
-                      ? `${selected.cryptoAmount} ${
-                          selected.currency ===
-                          "NPR"
-                            ? "USDT"
-                            : selected.currency
-                        }`
+                    selected.cryptoAmount !==
+                    null
+                      ? String(
+                          selected.cryptoAmount
+                        )
                       : "—"
                   }
                 />
 
                 <Detail
-                  label="Rate at Creation"
+                  label="Exchange Rate"
                   value={
                     selected.exchangeRate
                       ? `${selected.exchangeRate} NPR/USDT`
@@ -556,9 +993,22 @@ function AdminDepositRequests() {
                 <Detail
                   label="Submitted"
                   value={
-                    new Date(
-                      selected.createdAt
-                    ).toLocaleString()
+                    selected.createdAt
+                      ? new Date(
+                          selected.createdAt
+                        ).toLocaleString()
+                      : "—"
+                  }
+                />
+
+                <Detail
+                  label="Reviewed"
+                  value={
+                    selected.reviewedAt
+                      ? new Date(
+                          selected.reviewedAt
+                        ).toLocaleString()
+                      : "Not reviewed"
                   }
                 />
 
@@ -572,48 +1022,90 @@ function AdminDepositRequests() {
 
               </div>
 
+              {/* =================================================
+                  WALLET
+              ================================================= */}
 
-              {/* SCREENSHOT INFO */}
-
-              {selected.screenshotName && (
+              {selected.walletAddress && (
 
                 <div className="upload-note">
 
-                  Screenshot metadata saved:
-
-                  {" "}
-
-                  {selected.screenshotName}
-
-                  {" "}
-
-                  (
-                  {Math.ceil(
-                    selected.screenshotSize /
-                      1024
-                  )}
-                  {" "}KB)
+                  Wallet address:
 
                   <br />
 
-                  In this browser-only
-                  prototype the file itself
-                  is not uploaded to a server.
+                  <strong>
+                    {selected.walletAddress}
+                  </strong>
 
                 </div>
 
               )}
 
+              {/* =================================================
+                  SCREENSHOT
+              ================================================= */}
 
-              {/* ACTION BUTTONS */}
+              {selected.screenshotName && (
+
+                <div className="upload-note">
+
+                  Screenshot:
+
+                  {" "}
+
+                  {selected.screenshotName}
+
+                  {selected.screenshotSize
+                    ? ` (${Math.ceil(
+                        selected.screenshotSize /
+                          1024
+                      )} KB)`
+                    : ""}
+
+                  <br />
+
+                  The current browser
+                  prototype stores
+                  screenshot metadata
+                  only.
+
+                </div>
+
+              )}
+
+              {/* =================================================
+                  DEVELOPMENT NOTICE
+              ================================================= */}
+
+              <div className="upload-note">
+
+                <strong>
+                  Development mode:
+                </strong>{" "}
+
+                Approving this request
+                changes only its status.
+                It does not transfer,
+                credit, or withdraw real
+                money.
+
+              </div>
+
+              {/* =================================================
+                  ACTIONS
+              ================================================= */}
 
               <div className="detail-actions">
 
                 <button
+                  type="button"
                   className="approve"
                   disabled={
+                    updatingId ===
+                      selected.id ||
                     selected.status ===
-                    "Approved"
+                      "Approved"
                   }
                   onClick={() =>
                     updateStatus(
@@ -622,15 +1114,20 @@ function AdminDepositRequests() {
                     )
                   }
                 >
-                  ✓ Approve
+                  {updatingId ===
+                  selected.id
+                    ? "UPDATING..."
+                    : "✓ Approve"}
                 </button>
 
-
                 <button
+                  type="button"
                   className="reject"
                   disabled={
+                    updatingId ===
+                      selected.id ||
                     selected.status ===
-                    "Rejected"
+                      "Rejected"
                   }
                   onClick={() =>
                     updateStatus(
@@ -642,12 +1139,16 @@ function AdminDepositRequests() {
                   ✕ Reject
                 </button>
 
-
                 {selected.status !==
                   "Pending Verification" && (
 
                   <button
+                    type="button"
                     className="pending"
+                    disabled={
+                      updatingId ===
+                      selected.id
+                    }
                     onClick={() =>
                       updateStatus(
                         selected.id,
@@ -674,12 +1175,14 @@ function AdminDepositRequests() {
   );
 }
 
+/* =========================================================
+   DETAIL COMPONENT
+========================================================= */
 
-// ==========================================
-// DETAIL COMPONENT
-// ==========================================
-
-function Detail({ label, value }) {
+function Detail({
+  label,
+  value,
+}) {
   return (
     <div className="detail-item">
 
@@ -688,12 +1191,11 @@ function Detail({ label, value }) {
       </span>
 
       <strong>
-        {value}
+        {value || "—"}
       </strong>
 
     </div>
   );
 }
-
 
 export default AdminDepositRequests;

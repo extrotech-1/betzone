@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient.js";
 
 import Login from "./Page/Login/Login";
 import Register from "./Page/Login/Register/Register";
@@ -722,11 +723,67 @@ function LiveRoulettePage({ onBack }) {
 ========================================================= */
 
 function App() {
-  const [page, setPage] = useState(
-  localStorage.getItem("isLoggedIn") === "true"
-    ? "home"
-    : "login"
-);
+  const [page, setPage] = useState("login");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession();
+
+      if (data.session) {
+        localStorage.setItem("isLoggedIn", "true");
+        setPage("home");
+      } else {
+        localStorage.removeItem("isLoggedIn");
+        setPage("login");
+      }
+
+      setLoading(false);
+    }
+
+    checkSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session) {
+          localStorage.setItem("isLoggedIn", "true");
+          setPage("home");
+        } else {
+          localStorage.removeItem("isLoggedIn");
+          setPage("login");
+        }
+
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#070b12",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "18px",
+          fontWeight: "700",
+        }}
+      >
+        Loading BETZONE...
+      </div>
+    );
+  }
+
+  // YAHAN SE TUMHARA EXISTING CODE CONTINUE HOGA
 
   const path = window.location.pathname;
 
@@ -786,7 +843,8 @@ function App() {
   if (page === "home") {
     return (
       <Home
-        onLogout={() => {
+        onLogout={async () => {
+  await supabase.auth.signOut();
   localStorage.removeItem("isLoggedIn");
   setPage("login");
 }}
@@ -821,25 +879,25 @@ function App() {
   /* =====================================================
      ACCOUNT
   ===================================================== */
+if (page === "account") {
+  return (
+    <Account
+      onBack={() => setPage("home")}
 
-  if (page === "account") {
-    return (
-      <Account
-        onBack={() =>
-          setPage("home")
-        }
+      onDeposit={() => setPage("deposit")}
 
-        onDeposit={() =>
-          setPage("deposit")
-        }
+      onWithdraw={() => setPage("withdrawal")}
 
-        onWithdraw={() =>
-          setPage("withdrawal")
-        }
-      />
-    );
-  }
+      onTransactionHistory={() =>
+        setPage("transaction-history")
+      }
 
+      onCustomerSupport={() =>
+        setPage("customer-support")
+      }
+    />
+  );
+}
   /* =====================================================
      DEPOSIT
   ===================================================== */
