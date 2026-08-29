@@ -68,16 +68,12 @@ const FALLBACK_METHODS = [
     color: "#26a17b",
     enabled: true,
     recommended: false,
-    account_name: "",
-    account_number: "",
-    bank_name: "",
-    branch: "",
-    qr_image: "",
     network: "TON",
     wallet_address: "",
     min_amount: 3,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "tether-tron",
@@ -87,16 +83,12 @@ const FALLBACK_METHODS = [
     color: "#26a17b",
     enabled: true,
     recommended: false,
-    account_name: "",
-    account_number: "",
-    bank_name: "",
-    branch: "",
-    qr_image: "",
     network: "TRON",
     wallet_address: "",
     min_amount: 3,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "tether-bsc",
@@ -111,6 +103,7 @@ const FALLBACK_METHODS = [
     min_amount: 3,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "tether-ethereum",
@@ -125,6 +118,7 @@ const FALLBACK_METHODS = [
     min_amount: 3,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "tron",
@@ -139,6 +133,7 @@ const FALLBACK_METHODS = [
     min_amount: 10,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "bitcoin",
@@ -153,6 +148,7 @@ const FALLBACK_METHODS = [
     min_amount: 0.0001,
     max_amount: 10,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "litecoin",
@@ -167,6 +163,7 @@ const FALLBACK_METHODS = [
     min_amount: 0.01,
     max_amount: 100,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "ethereum",
@@ -181,6 +178,7 @@ const FALLBACK_METHODS = [
     min_amount: 0.001,
     max_amount: 100,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "bnb",
@@ -195,6 +193,7 @@ const FALLBACK_METHODS = [
     min_amount: 0.01,
     max_amount: 100,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "dogecoin",
@@ -209,6 +208,7 @@ const FALLBACK_METHODS = [
     min_amount: 10,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "usdc-eth",
@@ -223,6 +223,7 @@ const FALLBACK_METHODS = [
     min_amount: 3,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "xrp",
@@ -237,6 +238,7 @@ const FALLBACK_METHODS = [
     min_amount: 5,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
   {
     method_id: "polygon",
@@ -251,72 +253,32 @@ const FALLBACK_METHODS = [
     min_amount: 1,
     max_amount: 100000,
     instructions: "",
+    qr_image: "",
   },
 ];
 
-/* =========================================================
-   NORMALIZE PAYMENT METHOD
-========================================================= */
-
 function normalizeMethod(row) {
   return {
-    method_id:
-      row.method_id ||
-      row.id ||
-      "",
+    method_id: row.method_id || row.id || "",
+    name: row.name || row.method_name || "Payment Method",
+    category: row.category || row.type || "Local Payment",
+    icon: row.icon || "?",
+    color: row.color || "#2563eb",
+    enabled: row.enabled !== false,
+    recommended: row.recommended === true,
 
-    name:
-      row.name ||
-      row.method_name ||
-      "Payment Method",
-
-    category:
-      row.category ||
-      row.type ||
-      "Local Payment",
-
-    icon:
-      row.icon ||
-      "?",
-
-    color:
-      row.color ||
-      "#2563eb",
-
-    enabled:
-      row.enabled !== false,
-
-    recommended:
-      row.recommended === true,
-
-    account_name:
-      row.account_name ||
-      "",
-
-    account_number:
-      row.account_number ||
-      "",
-
-    bank_name:
-      row.bank_name ||
-      "",
-
-    branch:
-      row.branch ||
-      "",
+    account_name: row.account_name || "",
+    account_number: row.account_number || "",
+    bank_name: row.bank_name || "",
+    branch: row.branch || "",
 
     qr_image:
       row.qr_image ||
       row.qr_image_url ||
       "",
 
-    network:
-      row.network ||
-      "",
-
-    wallet_address:
-      row.wallet_address ||
-      "",
+    network: row.network || "",
+    wallet_address: row.wallet_address || "",
 
     min_amount:
       row.min_amount !== null &&
@@ -337,83 +299,56 @@ function normalizeMethod(row) {
   };
 }
 
-/* =========================================================
-   FORMAT NUMBER
-========================================================= */
-
-function formatNumber(
-  value,
-  maximum = 8
-) {
+function formatNumber(value, maximum = 8) {
   const number = Number(value);
 
   if (!Number.isFinite(number)) {
     return "0";
   }
 
-  return number.toLocaleString(
-    "en-NP",
-    {
-      maximumFractionDigits:
-        maximum,
-    }
-  );
+  return number.toLocaleString("en-NP", {
+    maximumFractionDigits: maximum,
+  });
 }
 
-/* =========================================================
-   DEPOSIT
-========================================================= */
+function Deposit({ onBack }) {
+  const [methods, setMethods] = useState([]);
+  const [selectedMethodId, setSelectedMethodId] = useState("");
+  const [loadingMethods, setLoadingMethods] = useState(true);
 
-function Deposit() {
-  const [methods, setMethods] =
-    useState([]);
+  const [user, setUser] = useState(null);
 
-  const [
-    selectedMethodId,
-    setSelectedMethodId,
-  ] = useState("");
+  const [amount, setAmount] = useState("");
+  const [senderAccount, setSenderAccount] = useState("");
+  const [senderName, setSenderName] = useState("");
+  const [transactionId, setTransactionId] = useState("");
 
-  const [
-    loadingMethods,
-    setLoadingMethods,
-  ] = useState(true);
+  const [exchangeRate, setExchangeRate] =
+    useState(169.7335108);
 
-  const [user, setUser] =
-    useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [amount, setAmount] =
-    useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const [
-    senderAccount,
-    setSenderAccount,
-  ] = useState("");
+  /* =====================================================
+     BACK
+  ===================================================== */
 
-  const [senderName, setSenderName] =
-    useState("");
+  function handleBack() {
+    if (typeof onBack === "function") {
+      onBack();
+      return;
+    }
 
-  const [
-    transactionId,
-    setTransactionId,
-  ] = useState("");
+    if (window.history.length > 1) {
+      window.history.back();
+    }
+  }
 
-  const [
-    exchangeRate,
-    setExchangeRate,
-  ] = useState(169.7335108);
-
-  const [submitting, setSubmitting] =
-    useState(false);
-
-  const [message, setMessage] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
-
-  /* =======================================================
-     GET LOGGED-IN USER
-  ======================================================= */
+  /* =====================================================
+     USER
+  ===================================================== */
 
   async function loadUser() {
     try {
@@ -428,28 +363,21 @@ function Deposit() {
 
       setUser(user || null);
     } catch (err) {
-      console.error(
-        "Could not get logged-in user:",
-        err
-      );
-
+      console.error("Could not get logged-in user:", err);
       setUser(null);
     }
   }
 
-  /* =======================================================
-     LOAD PAYMENT METHODS
-  ======================================================= */
+  /* =====================================================
+     PAYMENT METHODS
+  ===================================================== */
 
   async function loadPaymentMethods() {
     try {
       setLoadingMethods(true);
       setError("");
 
-      const {
-        data,
-        error,
-      } = await supabase
+      const { data, error } = await supabase
         .from("payment_methods")
         .select("*");
 
@@ -457,58 +385,35 @@ function Deposit() {
         throw error;
       }
 
-      let databaseMethods =
-        Array.isArray(data)
-          ? data.map(normalizeMethod)
-          : [];
+      let databaseMethods = Array.isArray(data)
+        ? data.map(normalizeMethod)
+        : [];
 
-      databaseMethods =
-        databaseMethods.filter(
-          (method) =>
-            method.enabled
-        );
+      databaseMethods = databaseMethods.filter(
+        (method) => method.enabled
+      );
 
-      if (
-        databaseMethods.length >
-        0
-      ) {
-        setMethods(
-          databaseMethods
-        );
+      if (databaseMethods.length > 0) {
+        setMethods(databaseMethods);
 
-        setSelectedMethodId(
-          (previous) => {
-            const stillExists =
-              databaseMethods.some(
-                (method) =>
-                  method.method_id ===
-                  previous
-              );
-
-            if (stillExists) {
-              return previous;
-            }
-
-            return (
-              databaseMethods[0]
-                ?.method_id || ""
-            );
-          }
-        );
-      } else {
-        const enabledFallback =
-          FALLBACK_METHODS.filter(
+        setSelectedMethodId((previous) => {
+          const exists = databaseMethods.some(
             (method) =>
-              method.enabled
+              method.method_id === previous
           );
 
-        setMethods(
-          enabledFallback
+          return exists
+            ? previous
+            : databaseMethods[0]?.method_id || "";
+        });
+      } else {
+        const fallback = FALLBACK_METHODS.filter(
+          (method) => method.enabled
         );
 
+        setMethods(fallback);
         setSelectedMethodId(
-          enabledFallback[0]
-            ?.method_id || ""
+          fallback[0]?.method_id || ""
         );
       }
     } catch (err) {
@@ -517,41 +422,27 @@ function Deposit() {
         err
       );
 
-      const enabledFallback =
-        FALLBACK_METHODS.filter(
-          (method) =>
-            method.enabled
-        );
-
-      setMethods(
-        enabledFallback
+      const fallback = FALLBACK_METHODS.filter(
+        (method) => method.enabled
       );
+
+      setMethods(fallback);
 
       setSelectedMethodId(
-        enabledFallback[0]
-          ?.method_id || ""
-      );
-
-      setError(
-        `Could not load payment methods: ${
-          err?.message ||
-          "Unknown error"
-        }`
+        fallback[0]?.method_id || ""
       );
     } finally {
       setLoadingMethods(false);
     }
   }
 
-  /* =======================================================
-     LOAD EXCHANGE RATE
-  ======================================================= */
+  /* =====================================================
+     EXCHANGE RATE
+  ===================================================== */
 
   function loadExchangeRate() {
     const saved = Number(
-      localStorage.getItem(
-        "usdtNprRate"
-      )
+      localStorage.getItem("usdtNprRate")
     );
 
     if (
@@ -562,9 +453,9 @@ function Deposit() {
     }
   }
 
-  /* =======================================================
-     INITIAL LOAD
-  ======================================================= */
+  /* =====================================================
+     INITIAL
+  ===================================================== */
 
   useEffect(() => {
     loadUser();
@@ -599,27 +490,23 @@ function Deposit() {
     };
   }, []);
 
-  /* =======================================================
-     SELECTED PAYMENT METHOD
-  ======================================================= */
+  /* =====================================================
+     SELECTED METHOD
+  ===================================================== */
 
-  const selectedMethod =
-    useMemo(() => {
-      return (
-        methods.find(
-          (method) =>
-            method.method_id ===
-            selectedMethodId
-        ) || null
-      );
-    }, [
-      methods,
-      selectedMethodId,
-    ]);
+  const selectedMethod = useMemo(() => {
+    return (
+      methods.find(
+        (method) =>
+          method.method_id ===
+          selectedMethodId
+      ) || null
+    );
+  }, [methods, selectedMethodId]);
 
-  /* =======================================================
-     RESET FORM WHEN METHOD CHANGES
-  ======================================================= */
+  /* =====================================================
+     RESET
+  ===================================================== */
 
   useEffect(() => {
     setAmount("");
@@ -630,116 +517,82 @@ function Deposit() {
     setError("");
   }, [selectedMethodId]);
 
-  /* =======================================================
-     LOCAL METHODS
-  ======================================================= */
+  /* =====================================================
+     CATEGORIES
+  ===================================================== */
 
-  const localMethods =
-    useMemo(() => {
-      return methods.filter(
+  const localMethods = useMemo(
+    () =>
+      methods.filter(
         (method) =>
           method.category ===
           "Local Payment"
-      );
-    }, [methods]);
+      ),
+    [methods]
+  );
 
-  /* =======================================================
-     CRYPTO METHODS
-  ======================================================= */
-
-  const cryptoMethods =
-    useMemo(() => {
-      return methods.filter(
+  const cryptoMethods = useMemo(
+    () =>
+      methods.filter(
         (method) =>
           method.category ===
           "Cryptocurrency"
-      );
-    }, [methods]);
+      ),
+    [methods]
+  );
 
-  /* =======================================================
+  /* =====================================================
      AMOUNT
-  ======================================================= */
+  ===================================================== */
 
-  const numericAmount =
-    Number(amount);
+  const numericAmount = Number(amount);
 
   const validAmount =
-    Number.isFinite(
-      numericAmount
-    ) &&
+    Number.isFinite(numericAmount) &&
     numericAmount > 0;
-
-  /* =======================================================
-     CRYPTO CALCULATION
-  ======================================================= */
 
   const calculatedCryptoAmount =
     selectedMethod?.category ===
       "Cryptocurrency" &&
     validAmount &&
     exchangeRate > 0
-      ? numericAmount /
-        exchangeRate
+      ? numericAmount / exchangeRate
       : 0;
 
-  /* =======================================================
-     COPY WALLET
-  ======================================================= */
+  /* =====================================================
+     COPY
+  ===================================================== */
 
-  async function copyWalletAddress() {
-    if (
-      !selectedMethod?.wallet_address
-    ) {
-      return;
-    }
+  async function copyText(text, successMessage) {
+    if (!text) return;
 
     try {
-      await navigator.clipboard.writeText(
-        selectedMethod.wallet_address
-      );
+      await navigator.clipboard.writeText(text);
 
-      setMessage(
-        "Wallet address copied."
-      );
-
+      setMessage(successMessage);
       setError("");
     } catch {
-      setError(
-        "Could not copy wallet address."
-      );
+      setError("Could not copy.");
     }
   }
 
-  /* =======================================================
-     CREATE DEPOSIT REQUEST
-     
-     IMPORTANT:
-     NO SCREENSHOT REQUIRED
-  ======================================================= */
+  /* =====================================================
+     SUBMIT DEPOSIT
+  ===================================================== */
 
-  async function createDepositRequest(
-    event
-  ) {
+  async function createDepositRequest(event) {
     event.preventDefault();
 
-    if (submitting) {
-      return;
-    }
+    if (submitting) return;
 
     setError("");
     setMessage("");
-
-    /* =====================================================
-       VERIFY USER
-    ===================================================== */
 
     let currentUser = user;
 
     try {
       const {
-        data: {
-          user: authenticatedUser,
-        },
+        data: { user: authenticatedUser },
         error: authError,
       } = await supabase.auth.getUser();
 
@@ -764,10 +617,6 @@ function Deposit() {
       return;
     }
 
-    /* =====================================================
-       USER MUST BE LOGGED IN
-    ===================================================== */
-
     if (!currentUser) {
       setError(
         "Please login before creating a deposit request."
@@ -775,10 +624,6 @@ function Deposit() {
 
       return;
     }
-
-    /* =====================================================
-       PAYMENT METHOD CHECK
-    ===================================================== */
 
     if (!selectedMethod) {
       setError(
@@ -788,17 +633,10 @@ function Deposit() {
       return;
     }
 
-    /* =====================================================
-       AMOUNT CHECK
-    ===================================================== */
-
-    const amountNumber =
-      Number(amount);
+    const amountNumber = Number(amount);
 
     if (
-      !Number.isFinite(
-        amountNumber
-      ) ||
+      !Number.isFinite(amountNumber) ||
       amountNumber <= 0
     ) {
       setError(
@@ -808,17 +646,10 @@ function Deposit() {
       return;
     }
 
-    /* =====================================================
-       MINIMUM
-    ===================================================== */
-
     if (
-      selectedMethod.min_amount !==
-        null &&
+      selectedMethod.min_amount !== null &&
       amountNumber <
-        Number(
-          selectedMethod.min_amount
-        )
+        Number(selectedMethod.min_amount)
     ) {
       setError(
         `Minimum deposit is ${formatNumber(
@@ -829,17 +660,10 @@ function Deposit() {
       return;
     }
 
-    /* =====================================================
-       MAXIMUM
-    ===================================================== */
-
     if (
-      selectedMethod.max_amount !==
-        null &&
+      selectedMethod.max_amount !== null &&
       amountNumber >
-        Number(
-          selectedMethod.max_amount
-        )
+        Number(selectedMethod.max_amount)
     ) {
       setError(
         `Maximum deposit is ${formatNumber(
@@ -850,9 +674,7 @@ function Deposit() {
       return;
     }
 
-    /* =====================================================
-       LOCAL PAYMENT REQUIRED FIELDS
-    ===================================================== */
+    /* LOCAL PAYMENT */
 
     if (
       selectedMethod.category ===
@@ -875,10 +697,6 @@ function Deposit() {
       }
     }
 
-    /* =====================================================
-       TRANSACTION ID
-    ===================================================== */
-
     if (!transactionId.trim()) {
       setError(
         "Please enter the Transaction ID / Reference Number."
@@ -887,33 +705,17 @@ function Deposit() {
       return;
     }
 
-    /* =====================================================
-       SUBMIT
-    ===================================================== */
-
     try {
       setSubmitting(true);
-
-      /* ===================================================
-         CRYPTO VALUE
-      =================================================== */
 
       const cryptoAmount =
         selectedMethod.category ===
         "Cryptocurrency"
-          ? amountNumber /
-            exchangeRate
+          ? amountNumber / exchangeRate
           : null;
 
-      /* ===================================================
-         SUPABASE PAYLOAD
-         
-         SCREENSHOT FIELDS REMOVED
-      =================================================== */
-
       const payload = {
-        user_id:
-          currentUser.id,
+        user_id: currentUser.id,
 
         method_id:
           selectedMethod.method_id,
@@ -928,11 +730,9 @@ function Deposit() {
           selectedMethod.network ||
           null,
 
-        amount:
-          amountNumber,
+        amount: amountNumber,
 
-        currency:
-          "NPR",
+        currency: "NPR",
 
         crypto_amount:
           cryptoAmount !== null
@@ -963,22 +763,14 @@ function Deposit() {
         status:
           "Pending Verification",
 
-        reviewed_at:
-          null,
+        reviewed_at: null,
       };
-
-      console.log(
-        "Creating deposit request:",
-        payload
-      );
 
       const {
         data,
         error,
       } = await supabase
-        .from(
-          "deposit_requests"
-        )
+        .from("deposit_requests")
         .insert(payload)
         .select()
         .single();
@@ -992,27 +784,15 @@ function Deposit() {
         data
       );
 
-      /* ===================================================
-         NOTIFY ADMIN PAGE
-      =================================================== */
-
       window.dispatchEvent(
         new Event(
           "deposit-request-created"
         )
       );
 
-      /* ===================================================
-         SUCCESS
-      =================================================== */
-
       setMessage(
         "Deposit request submitted successfully. Please wait for verification."
       );
-
-      /* ===================================================
-         RESET FORM
-      =================================================== */
 
       setAmount("");
       setSenderAccount("");
@@ -1024,45 +804,35 @@ function Deposit() {
         err
       );
 
-      /* ===================================================
-         RLS ERROR
-      =================================================== */
-
-      if (
-        String(
-          err?.message || ""
-        )
-          .toLowerCase()
-          .includes(
-            "row-level security"
-          )
-      ) {
-        setError(
-          "Deposit request was blocked by Supabase security policy. Make sure the user_id RLS policy is enabled."
-        );
-      } else {
-        setError(
-          `Could not create deposit request: ${
-            err?.message ||
-            "Unknown error"
-          }`
-        );
-      }
+      setError(
+        `Could not create deposit request: ${
+          err?.message ||
+          "Unknown error"
+        }`
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
-  /* =========================================================
+  /* =====================================================
      UI
-  ========================================================= */
+  ===================================================== */
 
   return (
     <div className="deposit-page">
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+      {/* BACK BUTTON */}
+
+      <button
+        type="button"
+        className="deposit-back-button"
+        onClick={handleBack}
+      >
+        ← Back
+      </button>
+
+      {/* HEADER */}
 
       <div className="deposit-header">
         <div>
@@ -1070,9 +840,7 @@ function Deposit() {
             DEPOSIT
           </div>
 
-          <h1>
-            Deposit
-          </h1>
+          <h1>Deposit</h1>
 
           <p>
             Choose your preferred payment
@@ -1081,17 +849,13 @@ function Deposit() {
         </div>
       </div>
 
-      {/* =====================================================
-          ERROR
-      ===================================================== */}
+      {/* ERROR */}
 
       {error && (
         <div className="deposit-alert error">
           <span>!</span>
 
-          <div>
-            {error}
-          </div>
+          <div>{error}</div>
 
           <button
             type="button"
@@ -1104,17 +868,13 @@ function Deposit() {
         </div>
       )}
 
-      {/* =====================================================
-          SUCCESS
-      ===================================================== */}
+      {/* SUCCESS */}
 
       {message && (
         <div className="deposit-alert success">
           <span>✓</span>
 
-          <div>
-            {message}
-          </div>
+          <div>{message}</div>
 
           <button
             type="button"
@@ -1127,9 +887,7 @@ function Deposit() {
         </div>
       )}
 
-      {/* =====================================================
-          PAYMENT METHODS
-      ===================================================== */}
+      {/* PAYMENT METHODS */}
 
       <section className="deposit-methods-section">
 
@@ -1147,17 +905,10 @@ function Deposit() {
           </div>
         ) : (
           <>
-            {/* =================================================
-                LOCAL PAYMENTS
-            ================================================= */}
-
-            {localMethods.length >
-              0 && (
+            {localMethods.length > 0 && (
               <div className="payment-category">
 
-                <h3>
-                  Local Payments
-                </h3>
+                <h3>Local Payments</h3>
 
                 <div className="payment-method-grid">
 
@@ -1182,7 +933,6 @@ function Deposit() {
                           )
                         }
                       >
-
                         <div
                           className="payment-method-icon"
                           style={{
@@ -1212,7 +962,7 @@ function Deposit() {
                           </div>
 
                           <span>
-                            {method.category}
+                            Local Payment
                           </span>
 
                         </div>
@@ -1223,7 +973,6 @@ function Deposit() {
                             ? "✓"
                             : "›"}
                         </div>
-
                       </button>
                     )
                   )}
@@ -1232,17 +981,10 @@ function Deposit() {
               </div>
             )}
 
-            {/* =================================================
-                CRYPTOCURRENCY
-            ================================================= */}
-
-            {cryptoMethods.length >
-              0 && (
+            {cryptoMethods.length > 0 && (
               <div className="payment-category">
 
-                <h3>
-                  Cryptocurrency
-                </h3>
+                <h3>Cryptocurrency</h3>
 
                 <div className="payment-method-grid">
 
@@ -1288,17 +1030,10 @@ function Deposit() {
                               {method.name}
                             </strong>
 
-                            {method.recommended && (
-                              <span className="recommended-badge">
-                                RECOMMENDED
-                              </span>
-                            )}
-
                           </div>
 
                           <span>
-                            {method.category}
-
+                            Cryptocurrency
                             {method.network
                               ? ` • ${method.network}`
                               : ""}
@@ -1324,16 +1059,10 @@ function Deposit() {
         )}
       </section>
 
-      {/* =====================================================
-          SELECTED METHOD
-      ===================================================== */}
+      {/* SELECTED PAYMENT */}
 
       {selectedMethod && (
         <section className="selected-method-section">
-
-          {/* ===================================================
-              SELECTED HEADER
-          =================================================== */}
 
           <div className="selected-method-heading">
 
@@ -1350,7 +1079,6 @@ function Deposit() {
             </div>
 
             <div>
-
               <div className="section-kicker">
                 SELECTED METHOD
               </div>
@@ -1366,13 +1094,11 @@ function Deposit() {
                   ? ` • ${selectedMethod.network}`
                   : ""}
               </p>
-
             </div>
+
           </div>
 
-          {/* ===================================================
-              PAYMENT DETAILS
-          =================================================== */}
+          {/* PAYMENT DETAILS */}
 
           <div className="payment-details-card">
 
@@ -1380,27 +1106,23 @@ function Deposit() {
               PAYMENT DETAILS
             </div>
 
-            <div className="payment-instruction">
-
+            <div className="compact-payment-notice">
               <strong>
-                Before creating a request
+                Before creating a request,
+                transfer the funds within
+                10 minutes.
               </strong>
 
               <p>
-                Transfer the funds within
-                10 minutes using the payment
-                details provided below.
+                Use the payment details
+                provided below.
               </p>
-
             </div>
 
-            {/* =================================================
-                ADMIN INSTRUCTIONS
-            ================================================= */}
+            {/* ADMIN INSTRUCTIONS */}
 
             {selectedMethod.instructions && (
               <div className="admin-payment-instructions">
-
                 <strong>
                   Payment Instructions
                 </strong>
@@ -1408,78 +1130,133 @@ function Deposit() {
                 <p>
                   {selectedMethod.instructions}
                 </p>
-
               </div>
             )}
 
-            {/* =================================================
-                LOCAL PAYMENT DETAILS
-            ================================================= */}
+            {/* LOCAL DETAILS */}
 
             {selectedMethod.category ===
               "Local Payment" && (
-              <div className="configured-details">
+              <div className="compact-payment-layout">
 
-                {selectedMethod.account_name && (
-                  <div className="configured-detail">
+                <div className="compact-account-details">
+
+                  {selectedMethod.account_number && (
+                    <div className="compact-row">
+
+                      <span>
+                        Account Number
+                      </span>
+
+                      <div className="compact-value">
+                        <strong>
+                          {
+                            selectedMethod.account_number
+                          }
+                        </strong>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyText(
+                              selectedMethod.account_number,
+                              "Account number copied."
+                            )
+                          }
+                        >
+                          ⧉
+                        </button>
+                      </div>
+
+                    </div>
+                  )}
+
+                  {selectedMethod.account_name && (
+                    <div className="compact-row">
+
+                      <span>
+                        Account Name
+                      </span>
+
+                      <div className="compact-value">
+
+                        <strong>
+                          {
+                            selectedMethod.account_name
+                          }
+                        </strong>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyText(
+                              selectedMethod.account_name,
+                              "Account name copied."
+                            )
+                          }
+                        >
+                          ⧉
+                        </button>
+
+                      </div>
+
+                    </div>
+                  )}
+
+                  {selectedMethod.bank_name && (
+                    <div className="compact-row">
+
+                      <span>
+                        Bank Name
+                      </span>
+
+                      <strong>
+                        {
+                          selectedMethod.bank_name
+                        }
+                      </strong>
+
+                    </div>
+                  )}
+
+                  {selectedMethod.branch && (
+                    <div className="compact-row">
+
+                      <span>
+                        Branch
+                      </span>
+
+                      <strong>
+                        {
+                          selectedMethod.branch
+                        }
+                      </strong>
+
+                    </div>
+                  )}
+
+                </div>
+
+                {/* SMALL QR */}
+
+                {selectedMethod.qr_image && (
+                  <div className="compact-qr-box">
 
                     <span>
-                      Account Name
+                      Scan to Pay
                     </span>
 
-                    <strong>
-                      {
-                        selectedMethod.account_name
+                    <img
+                      src={
+                        selectedMethod.qr_image
                       }
-                    </strong>
-
-                  </div>
-                )}
-
-                {selectedMethod.account_number && (
-                  <div className="configured-detail">
-
-                    <span>
-                      Account Number
-                    </span>
-
-                    <strong>
-                      {
-                        selectedMethod.account_number
-                      }
-                    </strong>
-
-                  </div>
-                )}
-
-                {selectedMethod.bank_name && (
-                  <div className="configured-detail">
-
-                    <span>
-                      Bank Name
-                    </span>
-
-                    <strong>
-                      {
-                        selectedMethod.bank_name
-                      }
-                    </strong>
-
-                  </div>
-                )}
-
-                {selectedMethod.branch && (
-                  <div className="configured-detail">
-
-                    <span>
-                      Branch
-                    </span>
-
-                    <strong>
-                      {
-                        selectedMethod.branch
-                      }
-                    </strong>
+                      alt={`${selectedMethod.name} QR`}
+                      className="compact-qr-image"
+                      onError={(event) => {
+                        event.currentTarget.style.display =
+                          "none";
+                      }}
+                    />
 
                   </div>
                 )}
@@ -1487,9 +1264,7 @@ function Deposit() {
               </div>
             )}
 
-            {/* =================================================
-                CRYPTO DETAILS
-            ================================================= */}
+            {/* CRYPTO */}
 
             {selectedMethod.category ===
               "Cryptocurrency" && (
@@ -1512,82 +1287,73 @@ function Deposit() {
                 )}
 
                 {selectedMethod.wallet_address && (
-                  <div className="wallet-box">
+                  <>
+                    <div className="wallet-box">
 
-                    <span>
-                      Wallet Address
-                    </span>
+                      <span>
+                        Wallet Address
+                      </span>
 
-                    <div className="wallet-address-row">
+                      <div className="wallet-address-row">
 
-                      <strong>
-                        {
-                          selectedMethod.wallet_address
-                        }
-                      </strong>
+                        <strong>
+                          {
+                            selectedMethod.wallet_address
+                          }
+                        </strong>
 
-                      <button
-                        type="button"
-                        onClick={
-                          copyWalletAddress
-                        }
-                      >
-                        Copy
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyText(
+                              selectedMethod.wallet_address,
+                              "Wallet address copied."
+                            )
+                          }
+                        >
+                          Copy
+                        </button>
+
+                      </div>
 
                     </div>
-                  </div>
+
+                    <div className="wallet-warning">
+                      ⚠️ Send only through the{" "}
+                      <strong>
+                        {
+                          selectedMethod.network
+                        }
+                      </strong>{" "}
+                      network.
+                    </div>
+                  </>
                 )}
 
-                {selectedMethod.wallet_address && (
-                  <div className="wallet-warning">
+                {selectedMethod.qr_image && (
+                  <div className="compact-crypto-qr">
 
-                    ⚠️ Send only through the{" "}
-                    <strong>
-                      {
-                        selectedMethod.network
+                    <span>
+                      Payment QR Code
+                    </span>
+
+                    <img
+                      src={
+                        selectedMethod.qr_image
                       }
-                    </strong>{" "}
-                    network. Sending through
-                    another network may result
-                    in permanent loss of funds.
+                      alt={`${selectedMethod.name} QR`}
+                      className="compact-qr-image"
+                    />
 
                   </div>
                 )}
-
-              </div>
-            )}
-
-            {/* =================================================
-                QR CODE
-            ================================================= */}
-
-            {selectedMethod.qr_image && (
-              <div className="payment-qr">
-
-                <span>
-                  Payment QR Code
-                </span>
-
-                <img
-                  src={
-                    selectedMethod.qr_image
-                  }
-                  alt={`${selectedMethod.name} payment QR`}
-                  onError={(event) => {
-                    event.currentTarget.style.display =
-                      "none";
-                  }}
-                />
 
               </div>
             )}
 
           </div>
 
-          {/* ===================================================
-              DEPOSIT FORM
-          =================================================== */}
+          {/* FORM */}
 
           <form
             className="deposit-form"
@@ -1596,9 +1362,7 @@ function Deposit() {
             }
           >
 
-            {/* =================================================
-                AMOUNT
-            ================================================= */}
+            {/* AMOUNT */}
 
             <div className="form-section">
 
@@ -1650,10 +1414,6 @@ function Deposit() {
                 placeholder="Enter amount"
               />
 
-              {/* =================================================
-                  QUICK AMOUNTS
-              ================================================= */}
-
               {selectedMethod.category ===
                 "Local Payment" && (
                 <div className="quick-amounts">
@@ -1690,16 +1450,13 @@ function Deposit() {
 
             </div>
 
-            {/* =================================================
-                CRYPTO CALCULATION
-            ================================================= */}
+            {/* CRYPTO CALCULATION */}
 
             {selectedMethod.category ===
               "Cryptocurrency" && (
               <div className="crypto-calculation">
 
                 <div>
-
                   <span>
                     Current Exchange Rate
                   </span>
@@ -1712,11 +1469,9 @@ function Deposit() {
                     )}{" "}
                     NPR
                   </strong>
-
                 </div>
 
                 <div>
-
                   <span>
                     You will send approximately
                   </span>
@@ -1732,7 +1487,6 @@ function Deposit() {
                       ? "USDT"
                       : selectedMethod.name}
                   </strong>
-
                 </div>
 
                 <p>
@@ -1744,15 +1498,12 @@ function Deposit() {
               </div>
             )}
 
-            {/* =================================================
-                SENDER ACCOUNT
-            ================================================= */}
+            {/* ACCOUNT */}
 
             <div className="form-field">
 
               <label>
-                Your{" "}
-                {selectedMethod.name}{" "}
+                Your {selectedMethod.name}{" "}
                 Account Number
               </label>
 
@@ -1769,15 +1520,12 @@ function Deposit() {
 
             </div>
 
-            {/* =================================================
-                SENDER NAME
-            ================================================= */}
+            {/* NAME */}
 
             <div className="form-field">
 
               <label>
-                Your{" "}
-                {selectedMethod.name}{" "}
+                Your {selectedMethod.name}{" "}
                 Account Name
               </label>
 
@@ -1794,9 +1542,7 @@ function Deposit() {
 
             </div>
 
-            {/* =================================================
-                TRANSACTION ID
-            ================================================= */}
+            {/* TRANSACTION */}
 
             <div className="form-field">
 
@@ -1817,17 +1563,7 @@ function Deposit() {
 
             </div>
 
-            {/* =================================================
-                SCREENSHOT REMOVED
-                 
-                NO FILE INPUT
-                NO SCREENSHOT VALIDATION
-                NO SCREENSHOT STATE
-            ================================================= */}
-
-            {/* =================================================
-                SAFETY NOTICE
-            ================================================= */}
+            {/* SAFETY */}
 
             <div className="safety-notice">
 
@@ -1845,32 +1581,22 @@ function Deposit() {
 
             </div>
 
-            {/* =================================================
-                USER INFO
-            ================================================= */}
+            {/* SESSION */}
 
-            {user && (
+            {user ? (
               <div className="deposit-session-info">
-
-                Logged-in account verified.
+                ✓ Logged-in account verified.
                 Your deposit request will be
                 linked to your account.
-
               </div>
-            )}
-
-            {!user && (
+            ) : (
               <div className="deposit-session-info warning">
-
                 Please log in before creating
                 a deposit request.
-
               </div>
             )}
 
-            {/* =================================================
-                SUBMIT
-            ================================================= */}
+            {/* SUBMIT */}
 
             <button
               type="submit"
