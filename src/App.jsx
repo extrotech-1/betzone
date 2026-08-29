@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "./supabaseClient.js";
 
 import Login from "./Page/Login/Login";
@@ -19,15 +19,100 @@ import CustomerSupport from "./Page/Login/CustomerSupport/CustomerSupport";
 import "./App.css";
 
 /* =========================================================
+   STORAGE
+========================================================= */
+
+const PAGE_STORAGE_KEY = "betzone_current_page";
+const LOGIN_STORAGE_KEY = "isLoggedIn";
+
+const PUBLIC_PAGES = [
+  "login",
+  "register",
+  "home",
+  "account",
+  "deposit",
+  "withdrawal",
+  "crash",
+  "dice",
+  "mines",
+  "live-roulette",
+  "customer-support",
+  "transaction-history",
+];
+
+const PROTECTED_PAGES = [
+  "home",
+  "account",
+  "deposit",
+  "withdrawal",
+  "crash",
+  "dice",
+  "mines",
+  "live-roulette",
+  "customer-support",
+  "transaction-history",
+];
+
+/* =========================================================
+   GET SAVED PAGE
+========================================================= */
+
+function getSavedPage() {
+  try {
+    const saved = localStorage.getItem(PAGE_STORAGE_KEY);
+
+    if (saved && PUBLIC_PAGES.includes(saved)) {
+      return saved;
+    }
+
+    /*
+     * IMPORTANT:
+     * Do NOT automatically return Home here.
+     *
+     * Returning Home was one of the reasons
+     * the app could jump back to Home.
+     */
+    return "login";
+  } catch (error) {
+    console.error("getSavedPage error:", error);
+    return "login";
+  }
+}
+
+/* =========================================================
+   SAVE PAGE
+========================================================= */
+
+function savePage(page) {
+  try {
+    if (!PUBLIC_PAGES.includes(page)) {
+      return;
+    }
+
+    localStorage.setItem(PAGE_STORAGE_KEY, page);
+  } catch (error) {
+    console.error("savePage error:", error);
+  }
+}
+
+/* =========================================================
    ADMIN WITHDRAWALS
 ========================================================= */
 
 function AdminWithdrawals() {
   const [withdrawals, setWithdrawals] = useState(() => {
     try {
-      const saved = localStorage.getItem("betzone_withdrawals");
+      const saved = localStorage.getItem(
+        "betzone_withdrawals"
+      );
+
       return saved ? JSON.parse(saved) : [];
-    } catch {
+    } catch (error) {
+      console.error(
+        "Failed to load withdrawals:",
+        error
+      );
+
       return [];
     }
   });
@@ -44,6 +129,7 @@ function AdminWithdrawals() {
     );
 
     setWithdrawals(updated);
+
     localStorage.setItem(
       "betzone_withdrawals",
       JSON.stringify(updated)
@@ -52,7 +138,8 @@ function AdminWithdrawals() {
 
   const deleteWithdrawal = (id) => {
     const updated = withdrawals.filter(
-      (item) => String(item.id) !== String(id)
+      (item) =>
+        String(item.id) !== String(id)
     );
 
     setWithdrawals(updated);
@@ -64,7 +151,11 @@ function AdminWithdrawals() {
   };
 
   const clearAll = () => {
-    if (!window.confirm("Delete all withdrawal requests?")) {
+    if (
+      !window.confirm(
+        "Delete all withdrawal requests?"
+      )
+    ) {
       return;
     }
 
@@ -249,7 +340,10 @@ function AdminWithdrawals() {
 
         .withdrawal-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(
+            3,
+            minmax(0, 1fr)
+          );
           gap: 10px;
         }
 
@@ -389,21 +483,31 @@ function AdminWithdrawals() {
           <div className="admin-logo">
             BET<span>ZONE</span>
           </div>
+
           <div className="admin-subtitle">
             Admin Withdrawal Management
           </div>
         </div>
 
         <div className="admin-links">
-          <a className="admin-link" href="/admin">
+          <a
+            className="admin-link"
+            href="/admin"
+          >
             Payment Methods
           </a>
 
-          <a className="admin-link" href="/admin/deposits">
+          <a
+            className="admin-link"
+            href="/admin/deposits"
+          >
             Deposit Requests
           </a>
 
-          <a className="admin-link" href="/admin/withdrawals">
+          <a
+            className="admin-link"
+            href="/admin/withdrawals"
+          >
             Withdrawal Requests
           </a>
         </div>
@@ -412,13 +516,22 @@ function AdminWithdrawals() {
       <main className="admin-container">
         <div className="admin-heading-row">
           <div className="admin-heading">
-            <h1>Withdrawal Requests</h1>
+            <h1>
+              Withdrawal Requests
+            </h1>
+
             <p>
-              Review and manage user withdrawal requests.
+              Review and manage user
+              withdrawal requests.
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+            }}
+          >
             <div className="request-count">
               {withdrawals.length} Requests
             </div>
@@ -436,8 +549,13 @@ function AdminWithdrawals() {
 
         {withdrawals.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">💸</div>
-            <div>No withdrawal requests yet.</div>
+            <div className="empty-icon">
+              💸
+            </div>
+
+            <div>
+              No withdrawal requests yet.
+            </div>
           </div>
         ) : (
           withdrawals.map((item) => {
@@ -588,7 +706,9 @@ function AdminWithdrawals() {
                     <button
                       className="action-btn delete-btn"
                       onClick={() =>
-                        deleteWithdrawal(item.id)
+                        deleteWithdrawal(
+                          item.id
+                        )
                       }
                     >
                       Delete
@@ -624,7 +744,8 @@ function LiveRoulettePage({ onBack }) {
           height: "60px",
           flexShrink: 0,
           background: "#090f19",
-          borderBottom: "1px solid #202938",
+          borderBottom:
+            "1px solid #202938",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -637,7 +758,8 @@ function LiveRoulettePage({ onBack }) {
           style={{
             background: "#182235",
             color: "#fff",
-            border: "1px solid #34435b",
+            border:
+              "1px solid #34435b",
             borderRadius: "7px",
             padding: "8px 13px",
             cursor: "pointer",
@@ -652,7 +774,14 @@ function LiveRoulettePage({ onBack }) {
             fontWeight: "900",
           }}
         >
-          BET<span style={{ color: "#f5b400" }}>ZONE</span>
+          BET
+          <span
+            style={{
+              color: "#f5b400",
+            }}
+          >
+            ZONE
+          </span>
         </div>
 
         <div
@@ -670,7 +799,8 @@ function LiveRoulettePage({ onBack }) {
         style={{
           padding: "12px 14px",
           background: "#080e18",
-          borderBottom: "1px solid #202938",
+          borderBottom:
+            "1px solid #202938",
         }}
       >
         <h2
@@ -705,7 +835,8 @@ function LiveRoulettePage({ onBack }) {
           title="Live Roulette"
           style={{
             width: "100%",
-            height: "calc(100vh - 125px)",
+            height:
+              "calc(100vh - 125px)",
             minHeight: "500px",
             border: "none",
             borderRadius: "8px",
@@ -723,46 +854,255 @@ function LiveRoulettePage({ onBack }) {
 ========================================================= */
 
 function App() {
-  const [page, setPage] = useState("login");
-  const [loading, setLoading] = useState(true);
+  /*
+   * IMPORTANT:
+   *
+   * Initial page is read ONLY ONCE.
+   *
+   * We do NOT read localStorage again
+   * and overwrite React state during mount.
+   */
+  const [page, setPageState] = useState(
+    () => getSavedPage()
+  );
 
-  useEffect(() => {
-    async function checkSession() {
-      const { data } = await supabase.auth.getSession();
+  const [loading, setLoading] =
+    useState(true);
 
-      if (data.session) {
-        localStorage.setItem("isLoggedIn", "true");
-        setPage("home");
-      } else {
-        localStorage.removeItem("isLoggedIn");
-        setPage("login");
+  /* =======================================================
+     CENTRAL NAVIGATION
+  ======================================================= */
+
+  const setPage = useCallback(
+    (nextPage) => {
+      if (
+        !PUBLIC_PAGES.includes(
+          nextPage
+        )
+      ) {
+        console.warn(
+          "Invalid page:",
+          nextPage
+        );
+
+        return;
       }
 
-      setLoading(false);
+      /*
+       * Update React state.
+       */
+      setPageState(nextPage);
+
+      /*
+       * Save ONLY because actual navigation
+       * happened.
+       */
+      savePage(nextPage);
+    },
+    []
+  );
+
+  /* =======================================================
+     SUPABASE SESSION
+  ======================================================= */
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkSession() {
+      try {
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth.getSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          console.error(
+            "Session check error:",
+            error
+          );
+
+          localStorage.removeItem(
+            LOGIN_STORAGE_KEY
+          );
+
+          /*
+           * Session error -> Login.
+           */
+          setPage("login");
+
+          return;
+        }
+
+        if (data?.session) {
+          /*
+           * User is logged in.
+           */
+          localStorage.setItem(
+            LOGIN_STORAGE_KEY,
+            "true"
+          );
+
+          /*
+           * VERY IMPORTANT:
+           *
+           * Do NOT call setPage("home")
+           * here.
+           *
+           * Keep whatever page is currently open.
+           */
+          return;
+        }
+
+        /*
+         * No Supabase session.
+         */
+        localStorage.removeItem(
+          LOGIN_STORAGE_KEY
+        );
+
+        /*
+         * Get current React page.
+         *
+         * Do NOT blindly send to Home.
+         */
+        setPageState((currentPage) => {
+          if (
+            PROTECTED_PAGES.includes(
+              currentPage
+            )
+          ) {
+            savePage("login");
+            return "login";
+          }
+
+          return currentPage;
+        });
+      } catch (error) {
+        console.error(
+          "Session error:",
+          error
+        );
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     }
 
     checkSession();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session) {
-          localStorage.setItem("isLoggedIn", "true");
-          setPage("home");
-        } else {
-          localStorage.removeItem("isLoggedIn");
-          setPage("login");
-        }
+    /* =====================================================
+       AUTH STATE CHANGE
+    ===================================================== */
 
-        setLoading(false);
-      }
-    );
+    const {
+      data: {
+        subscription,
+      },
+    } =
+      supabase.auth.onAuthStateChange(
+        (
+          event,
+          session
+        ) => {
+          if (!mounted) {
+            return;
+          }
+
+          console.log(
+            "Supabase auth event:",
+            event
+          );
+
+          /*
+           * USER LOGGED IN
+           */
+          if (session) {
+            localStorage.setItem(
+              LOGIN_STORAGE_KEY,
+              "true"
+            );
+
+            /*
+             * Only real SIGNED_IN should
+             * navigate to Home.
+             *
+             * Gallery/file picker will NOT
+             * create SIGNED_IN.
+             */
+            if (
+              event ===
+              "SIGNED_IN"
+            ) {
+              setPage("home");
+            }
+
+            return;
+          }
+
+          /*
+           * USER LOGGED OUT
+           */
+          if (
+            event ===
+            "SIGNED_OUT"
+          ) {
+            localStorage.removeItem(
+              LOGIN_STORAGE_KEY
+            );
+
+            setPage("login");
+          }
+        }
+      );
 
     return () => {
+      mounted = false;
+
       subscription.unsubscribe();
     };
-  }, []);
+  }, [setPage]);
+
+  /* =======================================================
+     IMPORTANT:
+     NO visibilitychange navigation
+  ======================================================= */
+
+  /*
+   * DO NOT add visibilitychange logic here.
+   *
+   * Mobile file picker/gallery can trigger:
+   *
+   * hidden
+   * visible
+   *
+   * but that does NOT mean the user navigated.
+   *
+   * Therefore we deliberately do nothing.
+   */
+
+  /* =======================================================
+     BROWSER HISTORY
+  ======================================================= */
+
+  /*
+   * Do not restore React page from localStorage
+   * on popstate.
+   *
+   * localStorage is NOT browser history.
+   *
+   * This prevents accidental page jumps.
+   */
+
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (loading) {
     return (
@@ -783,215 +1123,391 @@ function App() {
     );
   }
 
-  // YAHAN SE TUMHARA EXISTING CODE CONTINUE HOGA
+  /* =======================================================
+     URL
+  ======================================================= */
 
-  const path = window.location.pathname;
+  const path =
+    window.location.pathname;
 
-  /* =====================================================
+  /* =======================================================
      ADMIN ROUTES
-  ===================================================== */
+  ======================================================= */
 
-  if (path === "/admin") {
-    return <AdminPaymentMethods />;
+  if (
+    path === "/admin"
+  ) {
+    return (
+      <AdminPaymentMethods />
+    );
   }
 
-  if (path === "/admin/deposits") {
-    return <AdminDepositRequests />;
+  if (
+    path === "/admin/deposits"
+  ) {
+    return (
+      <AdminDepositRequests />
+    );
   }
 
-  if (path === "/admin/withdrawals") {
-    return <AdminWithdrawals />;
+  if (
+    path === "/admin/withdrawals"
+  ) {
+    return (
+      <AdminWithdrawals />
+    );
   }
 
-  /* =====================================================
+  /* =======================================================
      LOGIN
-  ===================================================== */
-  /* =====================================================
-     LOGIN
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "login") {
+  if (
+    page === "login"
+  ) {
     return (
       <Login
         onLogin={() => {
-          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem(
+            LOGIN_STORAGE_KEY,
+            "true"
+          );
+
           setPage("home");
         }}
-        onRegister={() => setPage("register")}
+        onRegister={() => {
+          setPage("register");
+        }}
       />
     );
   }
 
-
-  /* =====================================================
+  /* =======================================================
      REGISTER
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "register") {
+  if (
+    page === "register"
+  ) {
     return (
       <Register
-        onRegister={() => setPage("login")}
-        onLogin={() => setPage("login")}
+        onRegister={() => {
+          setPage("login");
+        }}
+        onLogin={() => {
+          setPage("login");
+        }}
       />
     );
   }
 
-  /* =====================================================
+  /* =======================================================
      HOME
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "home") {
+  if (
+    page === "home"
+  ) {
     return (
       <Home
         onLogout={async () => {
-  await supabase.auth.signOut();
-  localStorage.removeItem("isLoggedIn");
-  setPage("login");
-}}
+          try {
+            await supabase.auth.signOut();
+          } catch (error) {
+            console.error(
+              "Logout error:",
+              error
+            );
+          }
 
-        onAccount={() =>
-          setPage("account")
-        }
+          localStorage.removeItem(
+            LOGIN_STORAGE_KEY
+          );
 
-        onCrashGame={() =>
-          setPage("crash")
-        }
+          setPage("login");
+        }}
 
-        onDiceGame={() =>
-          setPage("dice")
-        }
+        onAccount={() => {
+          setPage("account");
+        }}
 
-        onMinesGame={() =>
-          setPage("mines")
-        }
+        onCrashGame={() => {
+          setPage("crash");
+        }}
 
-        onLiveRoulette={() =>
-          setPage("live-roulette")
-        }
+        onDiceGame={() => {
+          setPage("dice");
+        }}
 
-        onCustomerSupport={() =>
-  setPage("customer-support")
-}
+        onMinesGame={() => {
+          setPage("mines");
+        }}
+
+        onLiveRoulette={() => {
+          setPage(
+            "live-roulette"
+          );
+        }}
+
+        onCustomerSupport={() => {
+          setPage(
+            "customer-support"
+          );
+        }}
       />
     );
   }
 
-  /* =====================================================
+  /* =======================================================
      ACCOUNT
-  ===================================================== */
-if (page === "account") {
-  return (
-    <Account
-      onBack={() => setPage("home")}
+  ======================================================= */
 
-      onDeposit={() => setPage("deposit")}
+  if (
+    page === "account"
+  ) {
+    return (
+      <Account
+        onBack={() => {
+          setPage("home");
+        }}
 
-      onWithdraw={() => setPage("withdrawal")}
+        onDeposit={() => {
+          setPage("deposit");
+        }}
 
-      onTransactionHistory={() =>
-        setPage("transaction-history")
-      }
+        onWithdraw={() => {
+          setPage("withdrawal");
+        }}
 
-      onCustomerSupport={() =>
-        setPage("customer-support")
-      }
-    />
-  );
-}
-  /* =====================================================
+        onTransactionHistory={() => {
+          setPage(
+            "transaction-history"
+          );
+        }}
+
+        onCustomerSupport={() => {
+          setPage(
+            "customer-support"
+          );
+        }}
+      />
+    );
+  }
+
+  /* =======================================================
      DEPOSIT
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "deposit") {
+  if (
+    page === "deposit"
+  ) {
     return (
       <Deposit
-        onBack={() =>
-          setPage("account")
-        }
+        onBack={() => {
+          setPage("account");
+        }}
       />
     );
   }
 
-  /* =====================================================
+  /* =======================================================
      WITHDRAWAL
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "withdrawal") {
+  if (
+    page === "withdrawal"
+  ) {
     return (
       <Withdrawal
-        onBack={() =>
-          setPage("account")
-        }
+        onBack={() => {
+          setPage("account");
+        }}
       />
     );
   }
 
-  /* =====================================================
+  /* =======================================================
      CRASH
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "crash") {
+  if (
+    page === "crash"
+  ) {
     return (
       <CrashGame
-        onBack={() =>
-          setPage("home")
-        }
+        onBack={() => {
+          setPage("home");
+        }}
       />
     );
   }
 
-  /* =====================================================
+  /* =======================================================
      DICE
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "dice") {
+  if (
+    page === "dice"
+  ) {
     return (
       <DiceGame
-        onBack={() =>
-          setPage("home")
-        }
+        onBack={() => {
+          setPage("home");
+        }}
       />
     );
   }
 
-  /* =====================================================
+  /* =======================================================
      MINES
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "mines") {
+  if (
+    page === "mines"
+  ) {
     return (
       <MinesGame
-        onBack={() =>
-          setPage("home")
-        }
+        onBack={() => {
+          setPage("home");
+        }}
       />
     );
   }
 
-  /* =====================================================
+  /* =======================================================
      LIVE ROULETTE
-  ===================================================== */
+  ======================================================= */
 
-  if (page === "live-roulette") {
+  if (
+    page ===
+    "live-roulette"
+  ) {
     return (
       <LiveRoulettePage
-        onBack={() =>
-          setPage("home")
-        }
+        onBack={() => {
+          setPage("home");
+        }}
       />
     );
   }
 
-  if (page === "customer-support") {
+  /* =======================================================
+     CUSTOMER SUPPORT
+  ======================================================= */
+
+  if (
+    page ===
+    "customer-support"
+  ) {
+    return (
+      <CustomerSupport
+        onBack={() => {
+          setPage("home");
+        }}
+      />
+    );
+  }
+
+  /* =======================================================
+     TRANSACTION HISTORY
+  ======================================================= */
+
+  if (
+    page ===
+    "transaction-history"
+  ) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#070b12",
+          color: "#fff",
+          padding: "30px",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setPage("account");
+          }}
+          style={{
+            background: "#182235",
+            color: "#fff",
+            border:
+              "1px solid #34435b",
+            borderRadius: "7px",
+            padding: "9px 14px",
+            cursor: "pointer",
+          }}
+        >
+          ← Back
+        </button>
+
+        <h1
+          style={{
+            marginTop: "30px",
+          }}
+        >
+          Transaction History
+        </h1>
+
+        <p
+          style={{
+            color: "#8996a8",
+          }}
+        >
+          Transaction history will
+          appear here.
+        </p>
+      </div>
+    );
+  }
+
+  /* =======================================================
+     FALLBACK
+  ======================================================= */
+
   return (
-    <CustomerSupport
-      onBack={() => setPage("home")}
-    />
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#070b12",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: "15px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "18px",
+          fontWeight: "700",
+        }}
+      >
+        BETZONE
+      </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          setPage("home");
+        }}
+        style={{
+          background: "#f5b400",
+          color: "#000",
+          border: "none",
+          borderRadius: "7px",
+          padding: "10px 18px",
+          fontWeight: "800",
+          cursor: "pointer",
+        }}
+      >
+        Go to Home
+      </button>
+    </div>
   );
-
-}
-
-  return null;
 }
 
 export default App;
