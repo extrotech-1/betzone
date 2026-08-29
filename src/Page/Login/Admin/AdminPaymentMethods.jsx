@@ -29,7 +29,6 @@ const DEFAULT_METHODS = [
     max_amount: 25000,
     instructions: "",
   },
-
   {
     method_id: "khalti",
     name: "Khalti",
@@ -50,7 +49,6 @@ const DEFAULT_METHODS = [
     max_amount: 25000,
     instructions: "",
   },
-
   {
     method_id: "bank",
     name: "Bank Transfer",
@@ -71,7 +69,6 @@ const DEFAULT_METHODS = [
     max_amount: 25000,
     instructions: "",
   },
-
   {
     method_id: "tether-ton",
     name: "Tether on TON",
@@ -92,7 +89,6 @@ const DEFAULT_METHODS = [
     max_amount: 100000,
     instructions: "",
   },
-
   {
     method_id: "tether-tron",
     name: "Tether on Tron",
@@ -113,7 +109,6 @@ const DEFAULT_METHODS = [
     max_amount: 100000,
     instructions: "",
   },
-
   {
     method_id: "tether-bsc",
     name: "Tether on BSC",
@@ -134,7 +129,6 @@ const DEFAULT_METHODS = [
     max_amount: 100000,
     instructions: "",
   },
-
   {
     method_id: "tether-ethereum",
     name: "Tether on Ethereum",
@@ -155,7 +149,6 @@ const DEFAULT_METHODS = [
     max_amount: 100000,
     instructions: "",
   },
-
   {
     method_id: "tron",
     name: "TRON",
@@ -176,7 +169,6 @@ const DEFAULT_METHODS = [
     max_amount: 100000,
     instructions: "",
   },
-
   {
     method_id: "bitcoin",
     name: "Bitcoin",
@@ -197,7 +189,6 @@ const DEFAULT_METHODS = [
     max_amount: 10,
     instructions: "",
   },
-
   {
     method_id: "litecoin",
     name: "Litecoin",
@@ -218,7 +209,6 @@ const DEFAULT_METHODS = [
     max_amount: 100,
     instructions: "",
   },
-
   {
     method_id: "ethereum",
     name: "Ethereum",
@@ -239,7 +229,6 @@ const DEFAULT_METHODS = [
     max_amount: 100,
     instructions: "",
   },
-
   {
     method_id: "bnb",
     name: "Binance Coin BSC",
@@ -260,7 +249,6 @@ const DEFAULT_METHODS = [
     max_amount: 100,
     instructions: "",
   },
-
   {
     method_id: "dogecoin",
     name: "Dogecoin",
@@ -281,7 +269,6 @@ const DEFAULT_METHODS = [
     max_amount: 100000,
     instructions: "",
   },
-
   {
     method_id: "usdc-eth",
     name: "USD Coin on Ethereum",
@@ -302,7 +289,6 @@ const DEFAULT_METHODS = [
     max_amount: 100000,
     instructions: "",
   },
-
   {
     method_id: "xrp",
     name: "XRP",
@@ -323,7 +309,6 @@ const DEFAULT_METHODS = [
     max_amount: 100000,
     instructions: "",
   },
-
   {
     method_id: "polygon",
     name: "Polygon",
@@ -384,7 +369,7 @@ function emptyForm() {
 
 /*
 |--------------------------------------------------------------------------
-| NORMALIZE DATABASE ROW
+| NORMALIZE
 |--------------------------------------------------------------------------
 */
 
@@ -397,9 +382,7 @@ function normalizeMethod(row) {
   return {
     id: row?.id ?? null,
 
-    method_id:
-      row?.method_id ??
-      "",
+    method_id: row?.method_id ?? "",
 
     name:
       row?.name ??
@@ -412,9 +395,7 @@ function normalizeMethod(row) {
       row?.type ??
       category,
 
-    icon:
-      row?.icon ??
-      "",
+    icon: row?.icon ?? "",
 
     color:
       row?.color ??
@@ -427,20 +408,16 @@ function normalizeMethod(row) {
       row?.recommended === true,
 
     account_name:
-      row?.account_name ??
-      "",
+      row?.account_name ?? "",
 
     account_number:
-      row?.account_number ??
-      "",
+      row?.account_number ?? "",
 
     bank_name:
-      row?.bank_name ??
-      "",
+      row?.bank_name ?? "",
 
     branch:
-      row?.branch ??
-      "",
+      row?.branch ?? "",
 
     qr_image:
       row?.qr_image ??
@@ -448,20 +425,16 @@ function normalizeMethod(row) {
       "",
 
     network:
-      row?.network ??
-      "",
+      row?.network ?? "",
 
     wallet_address:
-      row?.wallet_address ??
-      "",
+      row?.wallet_address ?? "",
 
     min_amount:
-      row?.min_amount ??
-      "",
+      row?.min_amount ?? "",
 
     max_amount:
-      row?.max_amount ??
-      "",
+      row?.max_amount ?? "",
 
     instructions:
       row?.instructions ??
@@ -472,7 +445,7 @@ function normalizeMethod(row) {
 
 /*
 |--------------------------------------------------------------------------
-| LOAD PAYMENT METHODS
+| SUPABASE LOAD
 |--------------------------------------------------------------------------
 */
 
@@ -495,37 +468,6 @@ async function getPaymentMethods() {
 
 /*
 |--------------------------------------------------------------------------
-| LOAD RATE
-|--------------------------------------------------------------------------
-*/
-
-function getRate() {
-  try {
-    const saved =
-      Number(
-        localStorage.getItem(
-          "usdtNprRate"
-        )
-      );
-
-    if (
-      Number.isFinite(saved) &&
-      saved > 0
-    ) {
-      return saved;
-    }
-  } catch (error) {
-    console.warn(
-      "Could not read exchange rate:",
-      error
-    );
-  }
-
-  return 169.7335108;
-}
-
-/*
-|--------------------------------------------------------------------------
 | COMPONENT
 |--------------------------------------------------------------------------
 */
@@ -543,6 +485,9 @@ function AdminPaymentMethods() {
   const [saving, setSaving] =
     useState(false);
 
+  const [uploadingQR, setUploadingQR] =
+    useState(false);
+
   const [notice, setNotice] =
     useState("");
 
@@ -558,6 +503,12 @@ function AdminPaymentMethods() {
   const [form, setForm] =
     useState(emptyForm());
 
+  /*
+  |--------------------------------------------------------------------------
+  | RATE
+  |--------------------------------------------------------------------------
+  */
+
   const [rate, setRate] =
     useState(169.7335108);
 
@@ -566,7 +517,7 @@ function AdminPaymentMethods() {
 
   /*
   |--------------------------------------------------------------------------
-  | REFRESH METHODS
+  | LOAD METHODS
   |--------------------------------------------------------------------------
   */
 
@@ -578,10 +529,6 @@ function AdminPaymentMethods() {
       const data =
         await getPaymentMethods();
 
-      /*
-       * If database has no records,
-       * display all defaults.
-       */
       if (!data.length) {
         setMethods(
           DEFAULT_METHODS.map(
@@ -592,10 +539,6 @@ function AdminPaymentMethods() {
         return;
       }
 
-      /*
-       * Merge database records with
-       * the default 16 methods.
-       */
       const merged =
         DEFAULT_METHODS.map(
           (base) => {
@@ -617,10 +560,6 @@ function AdminPaymentMethods() {
           }
         );
 
-      /*
-       * Include custom methods created
-       * by admin.
-       */
       const customMethods =
         data.filter(
           (databaseMethod) =>
@@ -636,15 +575,8 @@ function AdminPaymentMethods() {
         ...customMethods,
       ]);
     } catch (err) {
-      console.error(
-        "Could not load payment methods:",
-        err
-      );
+      console.error(err);
 
-      /*
-       * Keep page usable even if
-       * Supabase temporarily fails.
-       */
       setMethods(
         DEFAULT_METHODS.map(
           normalizeMethod
@@ -664,12 +596,33 @@ function AdminPaymentMethods() {
 
   /*
   |--------------------------------------------------------------------------
-  | REFRESH RATE
+  | RATE
   |--------------------------------------------------------------------------
   */
 
+  function getRate() {
+    try {
+      const saved =
+        Number(
+          localStorage.getItem(
+            "usdtNprRate"
+          )
+        );
+
+      if (
+        Number.isFinite(saved) &&
+        saved > 0
+      ) {
+        return saved;
+      }
+    } catch {}
+
+    return 169.7335108;
+  }
+
   function refreshRate() {
-    const saved = getRate();
+    const saved =
+      getRate();
 
     setRate(saved);
     setRateInput(
@@ -764,23 +717,11 @@ function AdminPaymentMethods() {
       ...emptyForm(),
       ...method,
 
-      type:
-        method.type ||
-        method.category ||
-        "Local Payment",
-
-      category:
-        method.category ||
-        method.type ||
-        "Local Payment",
-
       min_amount:
-        method.min_amount ??
-        "",
+        method.min_amount ?? "",
 
       max_amount:
-        method.max_amount ??
-        "",
+        method.max_amount ?? "",
     });
 
     setNotice("");
@@ -790,12 +731,12 @@ function AdminPaymentMethods() {
 
   /*
   |--------------------------------------------------------------------------
-  | CLOSE EDITOR
+  | CLOSE
   |--------------------------------------------------------------------------
   */
 
   function closeEditor() {
-    if (saving) {
+    if (saving || uploadingQR) {
       return;
     }
 
@@ -806,7 +747,7 @@ function AdminPaymentMethods() {
 
   /*
   |--------------------------------------------------------------------------
-  | UPDATE FORM
+  | UPDATE FIELD
   |--------------------------------------------------------------------------
   */
 
@@ -819,17 +760,240 @@ function AdminPaymentMethods() {
         ...previous,
         [field]: value,
 
-        /*
-         * Keep type synchronized
-         * with category.
-         */
-        ...(field === "category"
+        ...(field ===
+        "category"
           ? {
               type: value,
             }
           : {}),
       })
     );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | QR UPLOAD
+  |--------------------------------------------------------------------------
+  |
+  | IMPORTANT:
+  |
+  | Supabase Storage bucket:
+  |
+  | payment-qr
+  |
+  | Bucket should be PUBLIC.
+  |
+  */
+
+  async function uploadQR(
+    event
+  ) {
+    const file =
+      event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setError("");
+    setNotice("");
+
+    /*
+     * File validation
+     */
+
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+      "image/svg+xml",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        file.type
+      )
+    ) {
+      setError(
+        "Only PNG, JPG, JPEG, WEBP or SVG QR images are allowed."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    /*
+     * 5 MB limit
+     */
+
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
+      setError(
+        "QR image must be smaller than 5 MB."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      setUploadingQR(true);
+
+      /*
+       * Safe filename
+       */
+
+      const extension =
+        file.name
+          .split(".")
+          .pop()
+          ?.toLowerCase() ||
+        "png";
+
+      const methodId =
+        form.method_id
+          .trim()
+          .toLowerCase()
+          .replace(
+            /[^a-z0-9_-]/g,
+            "-"
+          ) ||
+        "payment";
+
+      const filePath =
+        `${methodId}-${Date.now()}.${extension}`;
+
+      /*
+       * Upload
+       */
+
+      const {
+        error:
+          uploadError,
+      } = await supabase.storage
+        .from("payment-qr")
+        .upload(
+          filePath,
+          file,
+          {
+            cacheControl:
+              "3600",
+            upsert: true,
+            contentType:
+              file.type,
+          }
+        );
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      /*
+       * Get PUBLIC URL
+       */
+
+      const {
+        data:
+          publicUrlData,
+      } =
+        supabase.storage
+          .from(
+            "payment-qr"
+          )
+          .getPublicUrl(
+            filePath
+          );
+
+      const publicUrl =
+        publicUrlData?.publicUrl;
+
+      if (!publicUrl) {
+        throw new Error(
+          "Could not create public QR URL."
+        );
+      }
+
+      /*
+       * Put URL into form
+       */
+
+      updateField(
+        "qr_image",
+        publicUrl
+      );
+
+      setNotice(
+        "QR image uploaded successfully."
+      );
+    } catch (err) {
+      console.error(
+        "QR upload failed:",
+        err
+      );
+
+      setError(
+        `QR upload failed: ${
+          err?.message ||
+          "Unknown error"
+        }`
+      );
+    } finally {
+      setUploadingQR(false);
+
+      event.target.value = "";
+    }
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | DELETE OLD QR FILE
+  |--------------------------------------------------------------------------
+  */
+
+  async function deleteOldQR(
+    qrUrl
+  ) {
+    if (!qrUrl) {
+      return;
+    }
+
+    try {
+      const marker =
+        "/storage/v1/object/public/payment-qr/";
+
+      const index =
+        qrUrl.indexOf(marker);
+
+      if (index === -1) {
+        return;
+      }
+
+      const filePath =
+        decodeURIComponent(
+          qrUrl.substring(
+            index +
+              marker.length
+          )
+        );
+
+      if (!filePath) {
+        return;
+      }
+
+      await supabase.storage
+        .from("payment-qr")
+        .remove([
+          filePath,
+        ]);
+    } catch (err) {
+      console.warn(
+        "Old QR delete failed:",
+        err
+      );
+    }
   }
 
   /*
@@ -872,7 +1036,7 @@ function AdminPaymentMethods() {
       );
 
       setError("");
-    } catch (err) {
+    } catch {
       setError(
         "Could not save exchange rate."
       );
@@ -881,11 +1045,13 @@ function AdminPaymentMethods() {
 
   /*
   |--------------------------------------------------------------------------
-  | SAVE PAYMENT METHOD
+  | SAVE METHOD
   |--------------------------------------------------------------------------
   */
 
-  async function saveMethod(event) {
+  async function saveMethod(
+    event
+  ) {
     event.preventDefault();
 
     if (saving) {
@@ -901,15 +1067,10 @@ function AdminPaymentMethods() {
     const name =
       form.name.trim();
 
-    /*
-     * BASIC VALIDATION
-     */
-
     if (!methodId) {
       setError(
         "Method ID is required."
       );
-
       return;
     }
 
@@ -917,13 +1078,9 @@ function AdminPaymentMethods() {
       setError(
         "Method Name is required."
       );
-
       return;
     }
 
-    /*
-     * Validate method ID.
-     */
     if (
       !/^[a-zA-Z0-9_-]+$/.test(
         methodId
@@ -932,13 +1089,8 @@ function AdminPaymentMethods() {
       setError(
         "Method ID can contain only letters, numbers, hyphens and underscores."
       );
-
       return;
     }
-
-    /*
-     * AMOUNTS
-     */
 
     const minAmount =
       form.min_amount === ""
@@ -964,7 +1116,6 @@ function AdminPaymentMethods() {
       setError(
         "Minimum amount is invalid."
       );
-
       return;
     }
 
@@ -978,7 +1129,6 @@ function AdminPaymentMethods() {
       setError(
         "Maximum amount is invalid."
       );
-
       return;
     }
 
@@ -990,13 +1140,8 @@ function AdminPaymentMethods() {
       setError(
         "Minimum amount cannot be greater than maximum amount."
       );
-
       return;
     }
-
-    /*
-     * CRYPTO NETWORK
-     */
 
     if (
       form.category ===
@@ -1006,23 +1151,11 @@ function AdminPaymentMethods() {
       setError(
         "Crypto Network is required."
       );
-
       return;
     }
 
     try {
       setSaving(true);
-
-      /*
-       * IMPORTANT
-       *
-       * Your Supabase table requires:
-       *
-       * id   -> NOT NULL
-       * type -> NOT NULL
-       *
-       * Therefore type is always included.
-       */
 
       const payload = {
         method_id:
@@ -1031,16 +1164,9 @@ function AdminPaymentMethods() {
         name:
           name,
 
-        /*
-         * REQUIRED COLUMN
-         */
         type:
           form.category,
 
-        /*
-         * Keep category as well
-         * for the frontend.
-         */
         category:
           form.category,
 
@@ -1073,6 +1199,10 @@ function AdminPaymentMethods() {
         branch:
           form.branch.trim(),
 
+        /*
+         * QR PUBLIC URL
+         */
+
         qr_image:
           form.qr_image.trim(),
 
@@ -1095,19 +1225,14 @@ function AdminPaymentMethods() {
       let savedData = null;
 
       /*
-       * =========================================================
-       * EDIT EXISTING METHOD
-       * =========================================================
-       *
-       * IMPORTANT:
-       * We use UPDATE.
-       *
-       * No new id is generated.
+       * EDIT
        */
+
       if (editingMethod) {
         const {
           data,
-          error: updateError,
+          error:
+            updateError,
         } = await supabase
           .from(
             "payment_methods"
@@ -1125,33 +1250,41 @@ function AdminPaymentMethods() {
         }
 
         savedData = data;
+
+        /*
+         * Delete old QR if
+         * user uploaded a new one.
+         */
+
+        if (
+          editingMethod.qr_image &&
+          editingMethod.qr_image !==
+            form.qr_image
+        ) {
+          await deleteOldQR(
+            editingMethod.qr_image
+          );
+        }
       }
 
       /*
-       * =========================================================
-       * ADD NEW METHOD
-       * =========================================================
-       *
-       * Your table says:
-       *
-       * id NOT NULL
-       *
-       * So generate a UUID.
+       * ADD
        */
+
       else {
         const newId =
           crypto.randomUUID();
 
         const {
           data,
-          error: insertError,
+          error:
+            insertError,
         } = await supabase
           .from(
             "payment_methods"
           )
           .insert({
             id: newId,
-
             ...payload,
           })
           .select()
@@ -1164,18 +1297,10 @@ function AdminPaymentMethods() {
         savedData = data;
       }
 
-      /*
-       * NORMALIZE RESULT
-       */
-
       const savedMethod =
         normalizeMethod(
           savedData
         );
-
-      /*
-       * UPDATE UI
-       */
 
       setMethods(
         (previous) => {
@@ -1210,27 +1335,18 @@ function AdminPaymentMethods() {
         `${savedMethod.name} payment details saved successfully.`
       );
 
-      /*
-       * Notify Deposit page.
-       */
-
       window.dispatchEvent(
         new Event(
           "payment-config-updated"
         )
       );
 
-      /*
-       * Close editor.
-       */
-
       setShowEditor(false);
       setEditingMethod(null);
       setForm(emptyForm());
-
     } catch (err) {
       console.error(
-        "Could not save payment method:",
+        "Save failed:",
         err
       );
 
@@ -1247,126 +1363,31 @@ function AdminPaymentMethods() {
 
   /*
   |--------------------------------------------------------------------------
-  | TOGGLE ENABLE / DISABLE
+  | TOGGLE
   |--------------------------------------------------------------------------
   */
 
   async function toggleMethod(
     method
   ) {
-    if (!method.method_id) {
-      return;
-    }
-
     try {
       setError("");
 
       const newValue =
         !method.enabled;
 
-      /*
-       * IMPORTANT:
-       * Update existing row only.
-       *
-       * No upsert.
-       * No new ID required.
-       */
-      const updatePayload = {
-        name:
-          method.name,
-
-        /*
-         * REQUIRED
-         */
-        type:
-          method.type ||
-          method.category ||
-          "Local Payment",
-
-        category:
-          method.category ||
-          method.type ||
-          "Local Payment",
-
-        icon:
-          method.icon ||
-          "",
-
-        color:
-          method.color ||
-          "#2563eb",
-
-        enabled:
-          newValue,
-
-        recommended:
-          Boolean(
-            method.recommended
-          ),
-
-        account_name:
-          method.account_name ||
-          "",
-
-        account_number:
-          method.account_number ||
-          "",
-
-        bank_name:
-          method.bank_name ||
-          "",
-
-        branch:
-          method.branch ||
-          "",
-
-        qr_image:
-          method.qr_image ||
-          "",
-
-        network:
-          method.network ||
-          "",
-
-        wallet_address:
-          method.wallet_address ||
-          "",
-
-        min_amount:
-          method.min_amount ===
-            "" ||
-          method.min_amount ==
-            null
-            ? null
-            : Number(
-                method.min_amount
-              ),
-
-        max_amount:
-          method.max_amount ===
-            "" ||
-          method.max_amount ==
-            null
-            ? null
-            : Number(
-                method.max_amount
-              ),
-
-        instructions:
-          method.instructions ||
-          "",
-      };
-
       const {
         data,
-        error: updateError,
+        error:
+          updateError,
       } = await supabase
         .from(
           "payment_methods"
         )
-        .update(
-          updatePayload
-        )
+        .update({
+          enabled:
+            newValue,
+        })
         .eq(
           "method_id",
           method.method_id
@@ -1408,12 +1429,8 @@ function AdminPaymentMethods() {
           "payment-config-updated"
         )
       );
-
     } catch (err) {
-      console.error(
-        "Could not update payment method:",
-        err
-      );
+      console.error(err);
 
       setError(
         `Could not update payment method: ${
@@ -1444,7 +1461,6 @@ function AdminPaymentMethods() {
       setError(
         "Default payment methods cannot be deleted. Disable them instead."
       );
-
       return;
     }
 
@@ -1461,7 +1477,8 @@ function AdminPaymentMethods() {
       setError("");
 
       const {
-        error: deleteError,
+        error:
+          deleteError,
       } = await supabase
         .from(
           "payment_methods"
@@ -1476,6 +1493,10 @@ function AdminPaymentMethods() {
         throw deleteError;
       }
 
+      await deleteOldQR(
+        method.qr_image
+      );
+
       setMethods(
         (previous) =>
           previous.filter(
@@ -1488,12 +1509,8 @@ function AdminPaymentMethods() {
       setNotice(
         `${method.name} deleted successfully.`
       );
-
     } catch (err) {
-      console.error(
-        "Delete failed:",
-        err
-      );
+      console.error(err);
 
       setError(
         `Could not delete payment method: ${
@@ -1513,9 +1530,7 @@ function AdminPaymentMethods() {
   return (
     <div className="admin-payment-page">
 
-      {/* =========================================================
-          HEADER
-      ========================================================= */}
+      {/* HEADER */}
 
       <header className="admin-payment-header">
 
@@ -1544,9 +1559,7 @@ function AdminPaymentMethods() {
 
       </header>
 
-      {/* =========================================================
-          ERROR
-      ========================================================= */}
+      {/* ERROR */}
 
       {error && (
         <div className="admin-alert error">
@@ -1569,9 +1582,7 @@ function AdminPaymentMethods() {
         </div>
       )}
 
-      {/* =========================================================
-          SUCCESS
-      ========================================================= */}
+      {/* SUCCESS */}
 
       {notice && (
         <div className="admin-alert success">
@@ -1594,9 +1605,7 @@ function AdminPaymentMethods() {
         </div>
       )}
 
-      {/* =========================================================
-          EXCHANGE RATE
-      ========================================================= */}
+      {/* RATE */}
 
       <section className="exchange-card">
 
@@ -1611,9 +1620,11 @@ function AdminPaymentMethods() {
           </h2>
 
           <p>
-            This rate is automatically
-            used by the customer
-            Deposit page for Tether.
+            Current rate:
+            {" "}
+            <strong>
+              1 USDT = {rate} NPR
+            </strong>
           </p>
 
         </div>
@@ -1650,9 +1661,7 @@ function AdminPaymentMethods() {
 
       </section>
 
-      {/* =========================================================
-          TOOLBAR
-      ========================================================= */}
+      {/* TOOLBAR */}
 
       <div className="payment-toolbar">
 
@@ -1701,9 +1710,7 @@ function AdminPaymentMethods() {
 
       </div>
 
-      {/* =========================================================
-          METHODS
-      ========================================================= */}
+      {/* METHODS */}
 
       <section className="methods-section">
 
@@ -1906,7 +1913,50 @@ function AdminPaymentMethods() {
 
                     </div>
 
-                    {/* CARD BOTTOM */}
+                    {/* QR PREVIEW */}
+
+                    {method.qr_image && (
+                      <div
+                        style={{
+                          marginTop:
+                            "12px",
+                          display:
+                            "flex",
+                          alignItems:
+                            "center",
+                          gap: "10px",
+                        }}
+                      >
+
+                        <img
+                          src={
+                            method.qr_image
+                          }
+                          alt={`${method.name} QR`}
+                          style={{
+                            width:
+                              "55px",
+                            height:
+                              "55px",
+                            objectFit:
+                              "contain",
+                            borderRadius:
+                              "8px",
+                            background:
+                              "#fff",
+                            padding:
+                              "4px",
+                          }}
+                        />
+
+                        <span>
+                          QR configured ✓
+                        </span>
+
+                      </div>
+                    )}
+
+                    {/* BOTTOM */}
 
                     <div className="method-card-bottom">
 
@@ -1975,9 +2025,7 @@ function AdminPaymentMethods() {
 
       </section>
 
-      {/* =========================================================
-          EDITOR MODAL
-      ========================================================= */}
+      {/* EDITOR */}
 
       {showEditor && (
 
@@ -2021,7 +2069,10 @@ function AdminPaymentMethods() {
                 type="button"
                 className="editor-close"
                 onClick={closeEditor}
-                disabled={saving}
+                disabled={
+                  saving ||
+                  uploadingQR
+                }
               >
                 ×
               </button>
@@ -2037,9 +2088,7 @@ function AdminPaymentMethods() {
               }
             >
 
-              {/* =================================================
-                  BASIC INFORMATION
-              ================================================= */}
+              {/* BASIC */}
 
               <div className="form-section">
 
@@ -2048,8 +2097,6 @@ function AdminPaymentMethods() {
                 </div>
 
                 <div className="form-grid">
-
-                  {/* METHOD ID */}
 
                   <div className="form-field">
 
@@ -2062,16 +2109,14 @@ function AdminPaymentMethods() {
                       value={
                         form.method_id
                       }
-                      onChange={(
-                        event
-                      ) =>
+                      onChange={(event) =>
                         updateField(
                           "method_id",
                           event.target
                             .value
                         )
                       }
-                      placeholder="esewa, khalti, bitcoin"
+                      placeholder="esewa"
                       disabled={
                         Boolean(
                           editingMethod
@@ -2079,14 +2124,7 @@ function AdminPaymentMethods() {
                       }
                     />
 
-                    <small>
-                      Unique ID used by
-                      the application.
-                    </small>
-
                   </div>
-
-                  {/* NAME */}
 
                   <div className="form-field">
 
@@ -2099,9 +2137,7 @@ function AdminPaymentMethods() {
                       value={
                         form.name
                       }
-                      onChange={(
-                        event
-                      ) =>
+                      onChange={(event) =>
                         updateField(
                           "name",
                           event.target
@@ -2113,8 +2149,6 @@ function AdminPaymentMethods() {
 
                   </div>
 
-                  {/* CATEGORY */}
-
                   <div className="form-field">
 
                     <label>
@@ -2125,9 +2159,7 @@ function AdminPaymentMethods() {
                       value={
                         form.category
                       }
-                      onChange={(
-                        event
-                      ) =>
+                      onChange={(event) =>
                         updateField(
                           "category",
                           event.target
@@ -2148,8 +2180,6 @@ function AdminPaymentMethods() {
 
                   </div>
 
-                  {/* ICON */}
-
                   <div className="form-field">
 
                     <label>
@@ -2161,9 +2191,7 @@ function AdminPaymentMethods() {
                       value={
                         form.icon
                       }
-                      onChange={(
-                        event
-                      ) =>
+                      onChange={(event) =>
                         updateField(
                           "icon",
                           event.target
@@ -2174,8 +2202,6 @@ function AdminPaymentMethods() {
                     />
 
                   </div>
-
-                  {/* COLOR */}
 
                   <div className="form-field">
 
@@ -2191,9 +2217,7 @@ function AdminPaymentMethods() {
                           form.color ||
                           "#2563eb"
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "color",
                             event.target
@@ -2207,9 +2231,7 @@ function AdminPaymentMethods() {
                         value={
                           form.color
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "color",
                             event.target
@@ -2222,8 +2244,6 @@ function AdminPaymentMethods() {
 
                   </div>
 
-                  {/* CHECKBOXES */}
-
                   <div className="form-checks">
 
                     <label className="checkbox-row">
@@ -2233,9 +2253,7 @@ function AdminPaymentMethods() {
                         checked={Boolean(
                           form.enabled
                         )}
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "enabled",
                             event.target
@@ -2257,9 +2275,7 @@ function AdminPaymentMethods() {
                         checked={Boolean(
                           form.recommended
                         )}
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "recommended",
                             event.target
@@ -2280,9 +2296,7 @@ function AdminPaymentMethods() {
 
               </div>
 
-              {/* =================================================
-                  LOCAL PAYMENT
-              ================================================= */}
+              {/* LOCAL */}
 
               {form.category ===
                 "Local Payment" && (
@@ -2306,9 +2320,7 @@ function AdminPaymentMethods() {
                         value={
                           form.account_name
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "account_name",
                             event.target
@@ -2331,9 +2343,7 @@ function AdminPaymentMethods() {
                         value={
                           form.account_number
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "account_number",
                             event.target
@@ -2356,16 +2366,14 @@ function AdminPaymentMethods() {
                         value={
                           form.bank_name
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "bank_name",
                             event.target
                               .value
                           )
                         }
-                        placeholder="Only required for bank transfer"
+                        placeholder="Bank name"
                       />
 
                     </div>
@@ -2381,9 +2389,7 @@ function AdminPaymentMethods() {
                         value={
                           form.branch
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "branch",
                             event.target
@@ -2400,9 +2406,7 @@ function AdminPaymentMethods() {
                 </div>
               )}
 
-              {/* =================================================
-                  CRYPTOCURRENCY
-              ================================================= */}
+              {/* CRYPTO */}
 
               {form.category ===
                 "Cryptocurrency" && (
@@ -2426,16 +2430,14 @@ function AdminPaymentMethods() {
                         value={
                           form.network
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "network",
                             event.target
                               .value
                           )
                         }
-                        placeholder="TRON, TON, BSC, Ethereum..."
+                        placeholder="TRON, TON, BSC, Ethereum"
                       />
 
                     </div>
@@ -2451,22 +2453,15 @@ function AdminPaymentMethods() {
                         value={
                           form.wallet_address
                         }
-                        onChange={(
-                          event
-                        ) =>
+                        onChange={(event) =>
                           updateField(
                             "wallet_address",
                             event.target
                               .value
                           )
                         }
-                        placeholder="Paste the real wallet address"
+                        placeholder="Paste real wallet address"
                       />
-
-                      <small>
-                        Never enter a generated
-                        or fake wallet address.
-                      </small>
 
                     </div>
 
@@ -2475,9 +2470,7 @@ function AdminPaymentMethods() {
                 </div>
               )}
 
-              {/* =================================================
-                  QR CODE
-              ================================================= */}
+              {/* QR UPLOAD */}
 
               <div className="form-section">
 
@@ -2488,59 +2481,98 @@ function AdminPaymentMethods() {
                 <div className="form-field">
 
                   <label>
-                    QR Image URL
+                    Upload Payment QR
                   </label>
 
                   <input
-                    type="url"
-                    value={
-                      form.qr_image
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                    onChange={
+                      uploadQR
                     }
-                    onChange={(
-                      event
-                    ) =>
-                      updateField(
-                        "qr_image",
-                        event.target
-                          .value
-                      )
+                    disabled={
+                      uploadingQR ||
+                      saving
                     }
-                    placeholder="https://example.com/qr.png"
                   />
 
                   <small>
-                    Paste a publicly accessible
-                    image URL.
+                    PNG, JPG, JPEG, WEBP or
+                    SVG. Maximum 5 MB.
                   </small>
 
                 </div>
 
-                {form.qr_image && (
+                {uploadingQR && (
+                  <div
+                    style={{
+                      marginTop:
+                        "10px",
+                    }}
+                  >
+                    Uploading QR...
+                  </div>
+                )}
 
-                  <div className="qr-preview">
+                {form.qr_image && (
+                  <div
+                    className="qr-preview"
+                    style={{
+                      marginTop:
+                        "15px",
+                    }}
+                  >
 
                     <img
                       src={
                         form.qr_image
                       }
                       alt="Payment QR preview"
-                      onError={(
-                        event
-                      ) => {
-                        event.currentTarget.style.display =
-                          "none";
+                      style={{
+                        maxWidth:
+                          "220px",
+                        maxHeight:
+                          "220px",
+                        objectFit:
+                          "contain",
                       }}
                     />
 
-                  </div>
+                    <div
+                      style={{
+                        marginTop:
+                          "10px",
+                        wordBreak:
+                          "break-all",
+                        fontSize:
+                          "12px",
+                      }}
+                    >
+                      {form.qr_image}
+                    </div>
 
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateField(
+                          "qr_image",
+                          ""
+                        )
+                      }
+                      style={{
+                        marginTop:
+                          "10px",
+                      }}
+                    >
+                      Remove QR
+                    </button>
+
+                  </div>
                 )}
 
               </div>
 
-              {/* =================================================
-                  LIMITS
-              ================================================= */}
+              {/* LIMITS */}
 
               <div className="form-section">
 
@@ -2562,9 +2594,7 @@ function AdminPaymentMethods() {
                       value={
                         form.min_amount
                       }
-                      onChange={(
-                        event
-                      ) =>
+                      onChange={(event) =>
                         updateField(
                           "min_amount",
                           event.target
@@ -2588,9 +2618,7 @@ function AdminPaymentMethods() {
                       value={
                         form.max_amount
                       }
-                      onChange={(
-                        event
-                      ) =>
+                      onChange={(event) =>
                         updateField(
                           "max_amount",
                           event.target
@@ -2606,9 +2634,7 @@ function AdminPaymentMethods() {
 
               </div>
 
-              {/* =================================================
-                  INSTRUCTIONS
-              ================================================= */}
+              {/* INSTRUCTIONS */}
 
               <div className="form-section">
 
@@ -2627,9 +2653,7 @@ function AdminPaymentMethods() {
                     value={
                       form.instructions
                     }
-                    onChange={(
-                      event
-                    ) =>
+                    onChange={(event) =>
                       updateField(
                         "instructions",
                         event.target
@@ -2643,9 +2667,7 @@ function AdminPaymentMethods() {
 
               </div>
 
-              {/* =================================================
-                  ACTIONS
-              ================================================= */}
+              {/* ACTIONS */}
 
               <div className="editor-actions">
 
@@ -2656,7 +2678,8 @@ function AdminPaymentMethods() {
                     closeEditor
                   }
                   disabled={
-                    saving
+                    saving ||
+                    uploadingQR
                   }
                 >
                   Cancel
@@ -2666,7 +2689,8 @@ function AdminPaymentMethods() {
                   type="submit"
                   className="save-button"
                   disabled={
-                    saving
+                    saving ||
+                    uploadingQR
                   }
                 >
                   {saving
