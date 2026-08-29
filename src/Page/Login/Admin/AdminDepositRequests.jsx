@@ -2,246 +2,382 @@ import { useEffect, useMemo, useState } from "react";
 import "./AdminDepositRequests.css";
 import { supabase } from "../../../supabaseClient";
 
-/* =========================================================
-   LOCAL STORAGE
-========================================================= */
+/*
+|--------------------------------------------------------------------------
+| STATUS VALUES
+|--------------------------------------------------------------------------
+| Customer Deposit page currently creates:
+| "Pending Verification"
+|
+| We keep the same value so existing requests continue to work.
+|--------------------------------------------------------------------------
+*/
 
-function loadLocalRequests() {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem("depositRequests") || "[]"
-    );
+const STATUS = {
+  PENDING: "Pending Verification",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
 
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
+function getErrorMessage(error) {
+  if (!error) {
+    return "Unknown error";
   }
+
+  return (
+    error.message ||
+    error.details ||
+    error.hint ||
+    "Unknown error"
+  );
 }
 
-function saveLocalRequests(requests) {
-  try {
-    localStorage.setItem(
-      "depositRequests",
-      JSON.stringify(requests)
-    );
-  } catch (error) {
-    console.error(
-      "Could not save local requests:",
-      error
-    );
+function formatAmount(amount, currency = "NPR") {
+  const number = Number(amount);
+
+  if (!Number.isFinite(number)) {
+    return `${currency} —`;
   }
+
+  return `${currency} ${number.toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+  })}`;
 }
 
-/* =========================================================
-   NORMALIZE SUPABASE ROW
-========================================================= */
+function formatDate(value) {
+  if (!value) {
+    return "—";
+  }
 
-function normalizeRow(row) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function shortId(value) {
+  if (!value) {
+    return "—";
+  }
+
+  const text = String(value);
+
+  if (text.length <= 18) {
+    return text;
+  }
+
+  return `${text.slice(0, 8)}...${text.slice(-6)}`;
+}
+
+function normalizeStatus(value) {
+  if (!value) {
+    return STATUS.PENDING;
+  }
+
+  const status = String(value).trim().toLowerCase();
+
+  if (
+    status === "approved" ||
+    status === "approve"
+  ) {
+    return STATUS.APPROVED;
+  }
+
+  if (
+    status === "rejected" ||
+    status === "reject"
+  ) {
+    return STATUS.REJECTED;
+  }
+
+  return STATUS.PENDING;
+}
+
+function getStatusClass(status) {
+  const normalized = normalizeStatus(status);
+
+  if (normalized === STATUS.APPROVED) {
+    return "approved";
+  }
+
+  if (normalized === STATUS.REJECTED) {
+    return "rejected";
+  }
+
+  return "pending";
+}
+
+/*
+|--------------------------------------------------------------------------
+| NORMALIZE DATABASE ROW
+|--------------------------------------------------------------------------
+|
+| IMPORTANT:
+| We use the actual fields saved by Deposit.jsx:
+|
+| id
+| user_id
+| status
+| method_id
+| method_name
+| category
+| network
+| amount
+| currency
+| crypto_amount
+| exchange_rate
+| wallet_address
+| sender_account
+| sender_name
+| transaction_id
+| screenshot_name
+| screenshot_size
+| reviewed_at
+|
+|--------------------------------------------------------------------------
+*/
+
+function normalizeRequest(row) {
   return {
-    id: row.id,
+    id: row?.id ?? "",
 
-    // USER UUID
-    userId:
-      row.user_id ||
-      row.userId ||
-      "",
+    user_id: row?.user_id ?? "",
 
-    createdAt:
-      row.created_at ||
-      new Date().toISOString(),
+    status: normalizeStatus(row?.status),
 
-    status:
-      row.status ||
-      "Pending Verification",
+    method_id: row?.method_id ?? "",
 
-    methodId:
-      row.method_id || "",
-
-    methodName:
-      row.method_name ||
-      "Unknown",
+    method_name:
+      row?.method_name ??
+      row?.method_id ??
+      "Unknown Payment Method",
 
     category:
-      row.category || "",
+      row?.category ??
+      row?.type ??
+      "Payment",
 
-    network:
-      row.network || "",
+    network: row?.network ?? "",
 
-    amount:
-      Number(row.amount || 0),
+    amount: row?.amount ?? 0,
 
     currency:
-      row.currency || "NPR",
+      row?.currency ??
+      "NPR",
 
-    cryptoAmount:
-      row.crypto_amount ?? null,
+    crypto_amount:
+      row?.crypto_amount ??
+      null,
 
-    exchangeRate:
-      row.exchange_rate ?? null,
+    exchange_rate:
+      row?.exchange_rate ??
+      null,
 
-    walletAddress:
-      row.wallet_address || "",
+    wallet_address:
+      row?.wallet_address ??
+      "",
 
-    senderAccount:
-      row.sender_account || "",
+    sender_account:
+      row?.sender_account ??
+      "",
 
-    senderName:
-      row.sender_name || "",
+    sender_name:
+      row?.sender_name ??
+      "",
 
-    transactionId:
-      row.transaction_id || "",
+    transaction_id:
+      row?.transaction_id ??
+      "",
 
-    screenshotName:
-      row.screenshot_name || "",
+    screenshot_name:
+      row?.screenshot_name ??
+      "",
 
-    screenshotSize:
-      Number(row.screenshot_size || 0),
+    screenshot_size:
+      row?.screenshot_size ??
+      0,
 
-    reviewedAt:
-      row.reviewed_at || null,
+    reviewed_at:
+      row?.reviewed_at ??
+      null,
+
+    /*
+     * created_at is optional.
+     *
+     * We DO NOT use it in the Supabase query,
+     * because your previous error showed that some
+     * tables/configurations did not have created_at.
+     */
+    created_at:
+      row?.created_at ??
+      null,
+
+    /*
+     * Keep the complete original row.
+     * This is useful if additional columns exist.
+     */
+    raw: row,
   };
 }
 
-/* =========================================================
-   SUPABASE
-========================================================= */
+/*
+|--------------------------------------------------------------------------
+| LOAD DEPOSIT REQUESTS
+|--------------------------------------------------------------------------
+*/
 
-async function loadSupabaseRequests() {
+async function getDepositRequests() {
+  /*
+   * IMPORTANT:
+   * Do not select payment_method.
+   * Do not order by created_at.
+   *
+   * We simply select all existing columns.
+   */
+
   const {
     data,
     error,
   } = await supabase
     .from("deposit_requests")
-    .select("*")
-    .order("created_at", {
-      ascending: false,
-    });
+    .select("*");
 
   if (error) {
     throw error;
   }
 
   return Array.isArray(data)
-    ? data.map(normalizeRow)
+    ? data.map(normalizeRequest)
     : [];
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
+/*
+|--------------------------------------------------------------------------
+| ADMIN DEPOSIT REQUESTS
+|--------------------------------------------------------------------------
+*/
 
 function AdminDepositRequests() {
   const [requests, setRequests] =
-    useState(loadLocalRequests);
+    useState([]);
 
   const [filter, setFilter] =
     useState("All");
 
-  const [selectedId, setSelectedId] =
-    useState(null);
+  const [loading, setLoading] =
+    useState(true);
+
+  const [processingId, setProcessingId] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   const [notice, setNotice] =
     useState("");
 
-  const [loading, setLoading] =
-    useState(false);
-
-  const [updatingId, setUpdatingId] =
+  const [selectedRequest, setSelectedRequest] =
     useState(null);
 
-  /* =======================================================
-     LOAD REQUESTS
-  ======================================================= */
+  /*
+   * ---------------------------------------------------------------
+   * LOAD
+   * ---------------------------------------------------------------
+   */
 
   async function refreshRequests() {
     try {
       setLoading(true);
-      setNotice("");
+      setError("");
 
       const data =
-        await loadSupabaseRequests();
-
-      setRequests(data);
-
-      saveLocalRequests(data);
+        await getDepositRequests();
 
       /*
-       * If currently selected request
-       * disappeared, clear selection.
+       * Newest first when created_at exists.
+       *
+       * If created_at doesn't exist,
+       * we keep database order.
        */
-      if (
-        selectedId &&
-        !data.some(
-          (item) =>
-            item.id === selectedId
-        )
-      ) {
-        setSelectedId(null);
-      }
-    } catch (error) {
-      console.error(
-        "Could not load deposit requests:",
-        error
+      const sorted = [...data].sort(
+        (a, b) => {
+          if (
+            a.created_at &&
+            b.created_at
+          ) {
+            return (
+              new Date(b.created_at) -
+              new Date(a.created_at)
+            );
+          }
+
+          return 0;
+        }
       );
 
-      setNotice(
-        `Could not load Supabase requests: ${
-          error.message ||
-          "Unknown error"
-        }`
+      setRequests(sorted);
+    } catch (err) {
+      console.error(
+        "Could not load deposit requests:",
+        err
+      );
+
+      setError(
+        `Could not load deposit requests: ${getErrorMessage(
+          err
+        )}`
       );
     } finally {
       setLoading(false);
     }
   }
 
-  /* =======================================================
-     INITIAL LOAD
-  ======================================================= */
+  /*
+   * ---------------------------------------------------------------
+   * INITIAL LOAD
+   * ---------------------------------------------------------------
+   */
 
   useEffect(() => {
     refreshRequests();
 
-    const refresh = () => {
+    /*
+     * Local event fired by Deposit.jsx
+     */
+    const handleNewRequest = () => {
       refreshRequests();
     };
 
     window.addEventListener(
-      "storage",
-      refresh
-    );
-
-    window.addEventListener(
       "deposit-request-created",
-      refresh
-    );
-
-    window.addEventListener(
-      "deposit-request-updated",
-      refresh
+      handleNewRequest
     );
 
     return () => {
       window.removeEventListener(
-        "storage",
-        refresh
-      );
-
-      window.removeEventListener(
         "deposit-request-created",
-        refresh
-      );
-
-      window.removeEventListener(
-        "deposit-request-updated",
-        refresh
+        handleNewRequest
       );
     };
   }, []);
 
-  /* =======================================================
-     SUPABASE REALTIME
-  ======================================================= */
+  /*
+   * ---------------------------------------------------------------
+   * SUPABASE REALTIME
+   * ---------------------------------------------------------------
+   */
 
   useEffect(() => {
     const channel =
@@ -269,446 +405,685 @@ function AdminDepositRequests() {
     };
   }, []);
 
-  /* =======================================================
-     FILTER
-  ======================================================= */
+  /*
+   * ---------------------------------------------------------------
+   * COUNTS
+   * ---------------------------------------------------------------
+   */
 
-  const filtered = useMemo(() => {
-    if (filter === "All") {
+  const counts = useMemo(() => {
+    let pending = 0;
+    let approved = 0;
+    let rejected = 0;
+
+    requests.forEach((request) => {
+      const status =
+        normalizeStatus(
+          request.status
+        );
+
+      if (
+        status ===
+        STATUS.APPROVED
+      ) {
+        approved += 1;
+      } else if (
+        status ===
+        STATUS.REJECTED
+      ) {
+        rejected += 1;
+      } else {
+        pending += 1;
+      }
+    });
+
+    return {
+      total: requests.length,
+      pending,
+      approved,
+      rejected,
+    };
+  }, [requests]);
+
+  /*
+   * ---------------------------------------------------------------
+   * FILTER
+   * ---------------------------------------------------------------
+   */
+
+  const filteredRequests =
+    useMemo(() => {
+      if (filter === "All") {
+        return requests;
+      }
+
+      if (filter === "Pending") {
+        return requests.filter(
+          (request) =>
+            normalizeStatus(
+              request.status
+            ) ===
+            STATUS.PENDING
+        );
+      }
+
+      if (filter === "Approved") {
+        return requests.filter(
+          (request) =>
+            normalizeStatus(
+              request.status
+            ) ===
+            STATUS.APPROVED
+        );
+      }
+
+      if (filter === "Rejected") {
+        return requests.filter(
+          (request) =>
+            normalizeStatus(
+              request.status
+            ) ===
+            STATUS.REJECTED
+        );
+      }
+
       return requests;
-    }
+    }, [requests, filter]);
 
-    return requests.filter(
-      (request) =>
-        request.status === filter
-    );
-  }, [requests, filter]);
+  /*
+   * ---------------------------------------------------------------
+   * UPDATE STATUS
+   * ---------------------------------------------------------------
+   */
 
-  /* =======================================================
-     SELECTED
-  ======================================================= */
-
-  const selected =
-    requests.find(
-      (request) =>
-        request.id === selectedId
-    );
-
-  /* =======================================================
-     UPDATE STATUS
-  ======================================================= */
-
-  async function updateStatus(
-    id,
+  async function updateRequestStatus(
+    request,
     newStatus
   ) {
-    if (updatingId) {
-      return;
-    }
-
-    const request =
-      requests.find(
-        (item) =>
-          item.id === id
-      );
-
-    if (!request) {
-      setNotice(
-        "Deposit request not found."
+    if (!request?.id) {
+      setError(
+        "This deposit request has no ID."
       );
 
       return;
     }
 
+    /*
+     * Do not process twice.
+     */
+    if (processingId) {
+      return;
+    }
+
+    /*
+     * Only pending requests can be
+     * approved/rejected.
+     */
+    const currentStatus =
+      normalizeStatus(
+        request.status
+      );
+
     if (
-      request.status ===
-      newStatus
+      currentStatus !==
+      STATUS.PENDING
     ) {
-      setNotice(
-        `Request ${id} is already ${newStatus}.`
+      setError(
+        "This request has already been reviewed."
       );
 
       return;
     }
 
-    /* APPROVE CONFIRMATION */
+    const actionText =
+      newStatus === STATUS.APPROVED
+        ? "approve"
+        : "reject";
 
-    if (
-      newStatus === "Approved"
-    ) {
-      const confirmed =
-        window.confirm(
-          `Approve deposit request ${id}?\n\n` +
-          `User ID: ${
-            request.userId ||
-            "Not available"
-          }\n\n` +
-          `Amount: ${Number(
-            request.amount
-          ).toLocaleString()} ${
-            request.currency
-          }\n\n` +
-          `This will only update the deposit request status.`
-        );
-
-      if (!confirmed) {
-        return;
-      }
-    }
-
-    /* REJECT CONFIRMATION */
-
-    if (
-      newStatus === "Rejected"
-    ) {
-      const confirmed =
-        window.confirm(
-          `Reject deposit request ${id}?\n\n` +
-          `User ID: ${
-            request.userId ||
-            "Not available"
-          }`
-        );
-
-      if (!confirmed) {
-        return;
-      }
-    }
-
-    try {
-      setUpdatingId(id);
-      setNotice("");
-
-      const reviewedAt =
-        new Date().toISOString();
-
-      const {
-        data,
-        error,
-      } = await supabase
-        .from("deposit_requests")
-        .update({
-          status: newStatus,
-          reviewed_at: reviewedAt,
-        })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      const updated =
-        normalizeRow(data);
-
-      const nextRequests =
-        requests.map(
-          (item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  ...updated,
-                }
-              : item
-        );
-
-      setRequests(
-        nextRequests
-      );
-
-      saveLocalRequests(
-        nextRequests
-      );
-
-      window.dispatchEvent(
-        new Event(
-          "deposit-request-updated"
-        )
-      );
-
-      setNotice(
-        `Request ${id} marked as ${newStatus}.`
-      );
-    } catch (error) {
-      console.error(
-        "Status update failed:",
-        error
-      );
-
-      setNotice(
-        `Could not update request: ${
-          error.message ||
-          "Unknown error"
-        }`
-      );
-    } finally {
-      setUpdatingId(null);
-    }
-  }
-
-  /* =======================================================
-     CLEAR LOCAL CACHE
-  ======================================================= */
-
-  function clearLocalCache() {
     const confirmed =
       window.confirm(
-        "Clear only the local browser cache? Supabase requests will NOT be deleted."
+        `Are you sure you want to ${actionText} this deposit request?\n\nAmount: ${formatAmount(
+          request.amount,
+          request.currency
+        )}\nPayment: ${
+          request.method_name
+        }`
       );
 
     if (!confirmed) {
       return;
     }
 
-    localStorage.removeItem(
-      "depositRequests"
-    );
+    try {
+      setProcessingId(
+        request.id
+      );
 
-    setNotice(
-      "Local request cache cleared."
-    );
+      setError("");
+      setNotice("");
 
-    refreshRequests();
-  }
+      /*
+       * IMPORTANT:
+       *
+       * We update by BOTH id and current status.
+       *
+       * This prevents an old browser tab from
+       * approving/rejecting an already reviewed
+       * request.
+       */
 
-  /* =======================================================
-     HELPERS
-  ======================================================= */
+      const {
+        data,
+        error: updateError,
+      } = await supabase
+        .from("deposit_requests")
+        .update({
+          status: newStatus,
+          reviewed_at:
+            new Date().toISOString(),
+        })
+        .eq("id", request.id)
+        .eq(
+          "status",
+          STATUS.PENDING
+        )
+        .select("*")
+        .maybeSingle();
 
-  function statusClass(status) {
-    return String(status || "")
-      .toLowerCase()
-      .replace(/\s+/g, "-");
-  }
-
-  function formatAmount(
-    amount,
-    currency
-  ) {
-    const value =
-      Number(amount);
-
-    if (
-      !Number.isFinite(value)
-    ) {
-      return `0 ${
-        currency || ""
-      }`;
-    }
-
-    return `${value.toLocaleString(
-      "en-NP",
-      {
-        maximumFractionDigits: 8,
+      if (updateError) {
+        throw updateError;
       }
-    )} ${currency || ""}`;
+
+      /*
+       * If no row was returned,
+       * the request was probably already
+       * reviewed or RLS blocked the update.
+       */
+      if (!data) {
+        throw new Error(
+          "No request was updated. It may already have been reviewed, or Supabase Row Level Security is blocking this admin update."
+        );
+      }
+
+      const updatedRequest =
+        normalizeRequest(data);
+
+      /*
+       * Update UI immediately.
+       */
+      setRequests(
+        (previous) =>
+          previous.map(
+            (item) =>
+              item.id ===
+              request.id
+                ? updatedRequest
+                : item
+          )
+      );
+
+      /*
+       * Update selected modal.
+       */
+      setSelectedRequest(
+        updatedRequest
+      );
+
+      if (
+        newStatus ===
+        STATUS.APPROVED
+      ) {
+        setNotice(
+          `Deposit request approved successfully. ${formatAmount(
+            request.amount,
+            request.currency
+          )} is marked as approved.`
+        );
+      } else {
+        setNotice(
+          `Deposit request rejected successfully.`
+        );
+      }
+
+      /*
+       * Notify other pages/components.
+       */
+      window.dispatchEvent(
+        new Event(
+          "deposit-request-updated"
+        )
+      );
+    } catch (err) {
+      console.error(
+        "Could not update deposit request:",
+        err
+      );
+
+      setError(
+        `Could not ${actionText} deposit request: ${getErrorMessage(
+          err
+        )}`
+      );
+    } finally {
+      setProcessingId("");
+    }
   }
 
-  function shortUserId(
-    userId
-  ) {
-    if (!userId) {
-      return "User ID unavailable";
-    }
+  /*
+   * ---------------------------------------------------------------
+   * APPROVE
+   * ---------------------------------------------------------------
+   */
 
-    if (userId.length <= 24) {
-      return userId;
-    }
-
-    return `${userId.slice(
-      0,
-      12
-    )}...${userId.slice(-8)}`;
+  function approveRequest(request) {
+    updateRequestStatus(
+      request,
+      STATUS.APPROVED
+    );
   }
 
-  async function copyUserId(
-    userId
-  ) {
-    if (!userId) {
+  /*
+   * ---------------------------------------------------------------
+   * REJECT
+   * ---------------------------------------------------------------
+   */
+
+  function rejectRequest(request) {
+    updateRequestStatus(
+      request,
+      STATUS.REJECTED
+    );
+  }
+
+  /*
+   * ---------------------------------------------------------------
+   * VIEW DETAILS
+   * ---------------------------------------------------------------
+   */
+
+  function openDetails(request) {
+    setSelectedRequest(
+      request
+    );
+
+    setError("");
+    setNotice("");
+  }
+
+  function closeDetails() {
+    if (processingId) {
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(
-        userId
-      );
-
-      setNotice(
-        "User UUID copied."
-      );
-    } catch (error) {
-      console.error(
-        "Could not copy UUID:",
-        error
-      );
-    }
+    setSelectedRequest(null);
   }
 
-  /* =======================================================
-     RENDER
-  ======================================================= */
+  /*
+   * ---------------------------------------------------------------
+   * SCREENSHOT SIZE
+   * ---------------------------------------------------------------
+   */
+
+  function formatFileSize(bytes) {
+    const size =
+      Number(bytes);
+
+    if (
+      !Number.isFinite(size) ||
+      size <= 0
+    ) {
+      return "—";
+    }
+
+    if (size < 1024) {
+      return `${size} B`;
+    }
+
+    if (size < 1024 * 1024) {
+      return `${(
+        size / 1024
+      ).toFixed(1)} KB`;
+    }
+
+    return `${(
+      size /
+      (1024 * 1024)
+    ).toFixed(2)} MB`;
+  }
+
+  /*
+   * ---------------------------------------------------------------
+   * STATUS LABEL
+   * ---------------------------------------------------------------
+   */
+
+  function StatusBadge({
+    status,
+  }) {
+    const normalized =
+      normalizeStatus(status);
+
+    return (
+      <span
+        className={`deposit-status ${getStatusClass(
+          normalized
+        )}`}
+      >
+        {normalized ===
+        STATUS.PENDING
+          ? "PENDING VERIFICATION"
+          : normalized.toUpperCase()}
+      </span>
+    );
+  }
+
+  /*
+   * ---------------------------------------------------------------
+   * LOADING
+   * ---------------------------------------------------------------
+   */
+
+  if (loading) {
+    return (
+      <div className="admin-deposit-page">
+        <div className="admin-deposit-container">
+          <header className="admin-deposit-header">
+            <div>
+              <div className="admin-kicker">
+                ADMIN PANEL
+              </div>
+
+              <h1>
+                Deposit Requests
+              </h1>
+
+              <p>
+                Review, approve and
+                reject customer deposit
+                requests.
+              </p>
+            </div>
+          </header>
+
+          <div className="deposit-loading-card">
+            <div className="deposit-spinner"></div>
+
+            <h3>
+              Loading deposit
+              requests...
+            </h3>
+
+            <p>
+              Please wait.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /*
+   * ---------------------------------------------------------------
+   * PAGE
+   * ---------------------------------------------------------------
+   */
 
   return (
-    <div className="requests-page">
+    <div className="admin-deposit-page">
+      <div className="admin-deposit-container">
 
-      {/* =================================================
-          HEADER
-      ================================================= */}
+        {/* HEADER */}
+        <header className="admin-deposit-header">
+          <div>
+            <div className="admin-kicker">
+              ADMIN PANEL
+            </div>
 
-      <header className="requests-header">
+            <h1>
+              Deposit Requests
+            </h1>
 
-        <div>
-
-          <div className="admin-label">
-            ADMIN PANEL
+            <p>
+              Review, approve and reject
+              customer deposit requests.
+            </p>
           </div>
 
-          <h1>
-            Deposit Requests
-          </h1>
-
-          <p>
-            Review and manage customer
-            deposit submissions.
-          </p>
-
-        </div>
-
-        {/* STATS */}
-
-        <div className="request-stats">
-
-          <span>
-            <b>
-              {requests.length}
-            </b>{" "}
-            Total
-          </span>
-
-          <span>
-            <b>
-              {
-                requests.filter(
-                  (r) =>
-                    r.status ===
-                    "Pending Verification"
-                ).length
-              }
-            </b>{" "}
-            Pending
-          </span>
-
-          <span>
-            <b>
-              {
-                requests.filter(
-                  (r) =>
-                    r.status ===
-                    "Approved"
-                ).length
-              }
-            </b>{" "}
-            Approved
-          </span>
-
-          <span>
-            <b>
-              {
-                requests.filter(
-                  (r) =>
-                    r.status ===
-                    "Rejected"
-                ).length
-              }
-            </b>{" "}
-            Rejected
-          </span>
-
-        </div>
-
-      </header>
-
-      {/* =================================================
-          TOOLBAR
-      ================================================= */}
-
-      <div className="request-toolbar">
-
-        {[
-          "All",
-          "Pending Verification",
-          "Approved",
-          "Rejected",
-        ].map((item) => (
           <button
-            key={item}
             type="button"
-            className={
-              filter === item
-                ? "active"
-                : ""
+            className="admin-refresh-button"
+            onClick={
+              refreshRequests
             }
-            onClick={() =>
-              setFilter(item)
+            disabled={
+              Boolean(processingId)
             }
           >
-            {item}
+            ↻ Refresh
           </button>
-        ))}
+        </header>
 
-        <button
-          type="button"
-          onClick={
-            refreshRequests
-          }
-          disabled={loading}
-        >
-          {loading
-            ? "Refreshing..."
-            : "↻ Refresh"}
-        </button>
+        {/* ALERT */}
+        {error && (
+          <div className="admin-deposit-alert error">
+            <div className="alert-icon">
+              !
+            </div>
 
-        <button
-          type="button"
-          className="danger"
-          onClick={
-            clearLocalCache
-          }
-        >
-          Clear local cache
-        </button>
+            <div className="alert-message">
+              {error}
+            </div>
 
-      </div>
+            <button
+              type="button"
+              onClick={() =>
+                setError("")
+              }
+              className="alert-close"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
-      {/* =================================================
-          NOTICE
-      ================================================= */}
+        {notice && (
+          <div className="admin-deposit-alert success">
+            <div className="alert-icon">
+              ✓
+            </div>
 
-      {notice && (
-        <div className="request-notice">
-          ✓ {notice}
-        </div>
-      )}
+            <div className="alert-message">
+              {notice}
+            </div>
 
-      {/* =================================================
-          LAYOUT
-      ================================================= */}
+            <button
+              type="button"
+              onClick={() =>
+                setNotice("")
+              }
+              className="alert-close"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
-      <div className="requests-layout">
+        {/* STAT CARDS */}
+        <section className="deposit-stat-grid">
 
-        {/* =================================================
-            REQUEST LIST
-        ================================================= */}
+          <div
+            className={`deposit-stat-card ${
+              filter === "All"
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              setFilter("All")
+            }
+          >
+            <span>
+              TOTAL REQUESTS
+            </span>
 
-        <section className="request-list">
+            <strong>
+              {counts.total}
+            </strong>
+          </div>
 
-          {filtered.length ===
-          0 ? (
+          <div
+            className={`deposit-stat-card pending ${
+              filter === "Pending"
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              setFilter("Pending")
+            }
+          >
+            <span>
+              PENDING
+            </span>
 
-            <div className="empty-state">
+            <strong>
+              {counts.pending}
+            </strong>
+          </div>
 
-              <div>
+          <div
+            className={`deposit-stat-card approved ${
+              filter === "Approved"
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              setFilter("Approved")
+            }
+          >
+            <span>
+              APPROVED
+            </span>
+
+            <strong>
+              {counts.approved}
+            </strong>
+          </div>
+
+          <div
+            className={`deposit-stat-card rejected ${
+              filter === "Rejected"
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              setFilter("Rejected")
+            }
+          >
+            <span>
+              REJECTED
+            </span>
+
+            <strong>
+              {counts.rejected}
+            </strong>
+          </div>
+
+        </section>
+
+        {/* REQUEST SECTION */}
+        <section className="deposit-requests-section">
+
+          <div className="deposit-section-header">
+
+            <div>
+              <div className="admin-kicker">
+                CUSTOMER DEPOSITS
+              </div>
+
+              <h2>
+                Deposit Requests
+              </h2>
+            </div>
+
+            <div className="deposit-filter-tabs">
+
+              <button
+                type="button"
+                className={
+                  filter === "All"
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setFilter("All")
+                }
+              >
+                All ({counts.total})
+              </button>
+
+              <button
+                type="button"
+                className={
+                  filter === "Pending"
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setFilter(
+                    "Pending"
+                  )
+                }
+              >
+                Pending (
+                {counts.pending}
+                )
+              </button>
+
+              <button
+                type="button"
+                className={
+                  filter === "Approved"
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setFilter(
+                    "Approved"
+                  )
+                }
+              >
+                Approved (
+                {counts.approved}
+                )
+              </button>
+
+              <button
+                type="button"
+                className={
+                  filter === "Rejected"
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setFilter(
+                    "Rejected"
+                  )
+                }
+              >
+                Rejected (
+                {counts.rejected}
+                )
+              </button>
+
+            </div>
+
+          </div>
+
+          {/* EMPTY */}
+          {filteredRequests.length ===
+            0 && (
+            <div className="deposit-empty-card">
+
+              <div className="empty-icon">
                 📭
               </div>
 
@@ -717,482 +1092,617 @@ function AdminDepositRequests() {
               </h3>
 
               <p>
-                New submissions will
-                appear here.
+                There are no requests in
+                this category.
               </p>
 
             </div>
-
-          ) : (
-
-            filtered.map(
-              (request) => (
-
-                <button
-                  key={request.id}
-                  type="button"
-                  className={
-                    `request-row ${
-                      selectedId ===
-                      request.id
-                        ? "selected"
-                        : ""
-                    }`
-                  }
-                  onClick={() =>
-                    setSelectedId(
-                      request.id
-                    )
-                  }
-                >
-
-                  {/* MAIN */}
-
-                  <div className="request-main">
-
-                    <strong>
-                      {request.id}
-                    </strong>
-
-                    <span>
-                      {request.methodName}
-
-                      {request.network
-                        ? ` • ${request.network}`
-                        : ""}
-                    </span>
-
-                    {/* USER UUID */}
-
-                    <small>
-                      User:{" "}
-                      {shortUserId(
-                        request.userId
-                      )}
-                    </small>
-
-                  </div>
-
-                  {/* AMOUNT */}
-
-                  <div className="request-amount">
-
-                    {formatAmount(
-                      request.amount,
-                      request.currency
-                    )}
-
-                  </div>
-
-                  {/* STATUS */}
-
-                  <span
-                    className={
-                      `status-pill ${
-                        statusClass(
-                          request.status
-                        )
-                      }`
-                    }
-                  >
-                    {request.status}
-                  </span>
-
-                  {/* DATE */}
-
-                  <small>
-                    {new Date(
-                      request.createdAt
-                    ).toLocaleString()}
-                  </small>
-
-                </button>
-
-              )
-            )
-
           )}
+
+          {/* REQUEST LIST */}
+          <div className="deposit-request-list">
+
+            {filteredRequests.map(
+              (request) => {
+
+                const status =
+                  normalizeStatus(
+                    request.status
+                  );
+
+                const isPending =
+                  status ===
+                  STATUS.PENDING;
+
+                const isProcessing =
+                  processingId ===
+                  request.id;
+
+                return (
+                  <article
+                    key={
+                      request.id
+                    }
+                    className="deposit-request-card"
+                  >
+
+                    {/* TOP */}
+                    <div className="request-card-top">
+
+                      <div>
+                        <div className="request-label">
+                          REQUEST ID
+                        </div>
+
+                        <div className="request-id">
+                          {request.id}
+                        </div>
+                      </div>
+
+                      <StatusBadge
+                        status={
+                          request.status
+                        }
+                      />
+
+                    </div>
+
+                    {/* MAIN INFO */}
+                    <div className="request-main-grid">
+
+                      {/* CUSTOMER */}
+                      <div className="request-info-block">
+
+                        <div className="customer-avatar">
+                          {(
+                            request.sender_name ||
+                            "C"
+                          )
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
+
+                        <div>
+                          <span>
+                            CUSTOMER
+                          </span>
+
+                          <strong>
+                            {request.sender_name ||
+                              "Customer"}
+                          </strong>
+
+                          {request.user_id && (
+                            <small>
+                              User:{" "}
+                              {shortId(
+                                request.user_id
+                              )}
+                            </small>
+                          )}
+                        </div>
+
+                      </div>
+
+                      {/* METHOD */}
+                      <div className="request-info-block plain">
+
+                        <span>
+                          PAYMENT METHOD
+                        </span>
+
+                        <strong>
+                          {
+                            request.method_name
+                          }
+                        </strong>
+
+                        <small>
+                          {
+                            request.category
+                          }
+
+                          {request.network
+                            ? ` • ${request.network}`
+                            : ""}
+                        </small>
+
+                      </div>
+
+                      {/* AMOUNT */}
+                      <div className="request-info-block amount-block">
+
+                        <span>
+                          AMOUNT
+                        </span>
+
+                        <strong>
+                          {formatAmount(
+                            request.amount,
+                            request.currency
+                          )}
+                        </strong>
+
+                        {request.crypto_amount && (
+                          <small>
+                            Crypto:{" "}
+                            {
+                              request.crypto_amount
+                            }
+                          </small>
+                        )}
+
+                      </div>
+
+                    </div>
+
+                    {/* SECOND ROW */}
+                    <div className="request-meta-row">
+
+                      <div>
+                        <span>
+                          TRANSACTION ID
+                        </span>
+
+                        <strong>
+                          {request.transaction_id ||
+                            "—"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>
+                          CREATED
+                        </span>
+
+                        <strong>
+                          {formatDate(
+                            request.created_at
+                          )}
+                        </strong>
+                      </div>
+
+                      {request.reviewed_at && (
+                        <div>
+                          <span>
+                            REVIEWED
+                          </span>
+
+                          <strong>
+                            {formatDate(
+                              request.reviewed_at
+                            )}
+                          </strong>
+                        </div>
+                      )}
+
+                    </div>
+
+                    {/* ACTIONS */}
+                    <div className="request-card-actions">
+
+                      <button
+                        type="button"
+                        className="view-details-button"
+                        onClick={() =>
+                          openDetails(
+                            request
+                          )
+                        }
+                      >
+                        View Details
+                      </button>
+
+                      {isPending && (
+                        <div className="request-review-actions">
+
+                          <button
+                            type="button"
+                            className="reject-button"
+                            onClick={() =>
+                              rejectRequest(
+                                request
+                              )
+                            }
+                            disabled={
+                              Boolean(
+                                processingId
+                              )
+                            }
+                          >
+                            {isProcessing
+                              ? "Processing..."
+                              : "Reject"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="approve-button"
+                            onClick={() =>
+                              approveRequest(
+                                request
+                              )
+                            }
+                            disabled={
+                              Boolean(
+                                processingId
+                              )
+                            }
+                          >
+                            {isProcessing
+                              ? "Processing..."
+                              : "Approve"}
+                          </button>
+
+                        </div>
+                      )}
+
+                      {!isPending && (
+                        <div className="already-reviewed">
+                          {status ===
+                          STATUS.APPROVED
+                            ? "✓ Approved"
+                            : "✕ Rejected"}
+                        </div>
+                      )}
+
+                    </div>
+
+                  </article>
+                );
+              }
+            )}
+
+          </div>
 
         </section>
 
-        {/* =================================================
-            DETAIL
-        ================================================= */}
+      </div>
 
-        <aside className="request-detail">
+      {/* DETAILS MODAL */}
+      {selectedRequest && (
+        <div
+          className="deposit-modal-overlay"
+          onClick={
+            closeDetails
+          }
+        >
+          <div
+            className="deposit-modal"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
 
-          {!selected ? (
+            {/* MODAL HEADER */}
+            <div className="deposit-modal-header">
 
-            <div className="detail-empty">
+              <div>
+                <div className="admin-kicker">
+                  DEPOSIT REQUEST
+                </div>
 
-              Select a request to view
-              its details.
+                <h2>
+                  Request Details
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="modal-close-button"
+                onClick={
+                  closeDetails
+                }
+              >
+                ×
+              </button>
 
             </div>
 
-          ) : (
+            {/* STATUS */}
+            <div className="modal-status-row">
 
-            <>
+              <StatusBadge
+                status={
+                  selectedRequest.status
+                }
+              />
 
-              {/* DETAIL TOP */}
+              <span>
+                ID:{" "}
+                {selectedRequest.id}
+              </span>
 
-              <div className="detail-top">
+            </div>
 
-                <div>
+            {/* AMOUNT */}
+            <div className="modal-amount-card">
 
-                  <span>
-                    Deposit Request
-                  </span>
+              <span>
+                DEPOSIT AMOUNT
+              </span>
 
-                  <h2>
-                    {selected.id}
-                  </h2>
+              <strong>
+                {formatAmount(
+                  selectedRequest.amount,
+                  selectedRequest.currency
+                )}
+              </strong>
 
-                </div>
+            </div>
 
-                <span
-                  className={
-                    `status-pill ${
-                      statusClass(
-                        selected.status
-                      )
-                    }`
-                  }
-                >
-                  {selected.status}
+            {/* DETAILS */}
+            <div className="modal-detail-grid">
+
+              <div className="modal-detail">
+                <span>
+                  CUSTOMER
                 </span>
 
+                <strong>
+                  {selectedRequest.sender_name ||
+                    "Customer"}
+                </strong>
               </div>
 
-              {/* =================================================
-                  USER INFORMATION
-              ================================================= */}
+              <div className="modal-detail">
+                <span>
+                  USER ID
+                </span>
 
-              <div className="user-info-box">
-
-                <div className="user-info-title">
-                  👤 User Information
-                </div>
-
-                <div className="user-id-row">
-
-                  <div>
-
-                    <span>
-                      User UUID
-                    </span>
-
-                    <strong>
-                      {selected.userId ||
-                        "User ID not available"}
-                    </strong>
-
-                  </div>
-
-                  {selected.userId && (
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        copyUserId(
-                          selected.userId
-                        )
-                      }
-                    >
-                      Copy UUID
-                    </button>
-
-                  )}
-
-                </div>
-
+                <strong className="break-text">
+                  {selectedRequest.user_id ||
+                    "—"}
+                </strong>
               </div>
 
-              {/* =================================================
-                  DETAIL GRID
-              ================================================= */}
-
-              <div className="detail-grid">
-
-                <Detail
-                  label="Payment Method"
-                  value={
-                    selected.methodName
-                  }
-                />
-
-                <Detail
-                  label="Category"
-                  value={
-                    selected.category ||
-                    "—"
-                  }
-                />
-
-                <Detail
-                  label="Network"
-                  value={
-                    selected.network ||
-                    "—"
-                  }
-                />
-
-                <Detail
-                  label="Amount"
-                  value={formatAmount(
-                    selected.amount,
-                    selected.currency
-                  )}
-                />
-
-                <Detail
-                  label="Crypto Amount"
-                  value={
-                    selected.cryptoAmount !==
-                    null
-                      ? String(
-                          selected.cryptoAmount
-                        )
-                      : "—"
-                  }
-                />
-
-                <Detail
-                  label="Exchange Rate"
-                  value={
-                    selected.exchangeRate
-                      ? `${selected.exchangeRate} NPR/USDT`
-                      : "—"
-                  }
-                />
-
-                <Detail
-                  label="Transaction ID / Hash"
-                  value={
-                    selected.transactionId ||
-                    "—"
-                  }
-                />
-
-                <Detail
-                  label="Sender Account"
-                  value={
-                    selected.senderAccount ||
-                    "—"
-                  }
-                />
-
-                <Detail
-                  label="Sender Name"
-                  value={
-                    selected.senderName ||
-                    "—"
-                  }
-                />
-
-                <Detail
-                  label="Submitted"
-                  value={
-                    selected.createdAt
-                      ? new Date(
-                          selected.createdAt
-                        ).toLocaleString()
-                      : "—"
-                  }
-                />
-
-                <Detail
-                  label="Reviewed"
-                  value={
-                    selected.reviewedAt
-                      ? new Date(
-                          selected.reviewedAt
-                        ).toLocaleString()
-                      : "Not reviewed"
-                  }
-                />
-
-                <Detail
-                  label="Screenshot"
-                  value={
-                    selected.screenshotName ||
-                    "Not uploaded"
-                  }
-                />
-
-              </div>
-
-              {/* =================================================
-                  WALLET
-              ================================================= */}
-
-              {selected.walletAddress && (
-
-                <div className="upload-note">
-
-                  Wallet address:
-
-                  <br />
-
-                  <strong>
-                    {selected.walletAddress}
-                  </strong>
-
-                </div>
-
-              )}
-
-              {/* =================================================
-                  SCREENSHOT
-              ================================================= */}
-
-              {selected.screenshotName && (
-
-                <div className="upload-note">
-
-                  Screenshot:
-
-                  {" "}
-
-                  {selected.screenshotName}
-
-                  {selected.screenshotSize
-                    ? ` (${Math.ceil(
-                        selected.screenshotSize /
-                          1024
-                      )} KB)`
-                    : ""}
-
-                  <br />
-
-                  The current browser
-                  prototype stores
-                  screenshot metadata
-                  only.
-
-                </div>
-
-              )}
-
-              {/* =================================================
-                  DEVELOPMENT NOTICE
-              ================================================= */}
-
-              <div className="upload-note">
+              <div className="modal-detail">
+                <span>
+                  PAYMENT METHOD
+                </span>
 
                 <strong>
-                  Development mode:
-                </strong>{" "}
-
-                Approving this request
-                changes only its status.
-                It does not transfer,
-                credit, or withdraw real
-                money.
-
+                  {
+                    selectedRequest.method_name
+                  }
+                </strong>
               </div>
 
-              {/* =================================================
-                  ACTIONS
-              ================================================= */}
+              <div className="modal-detail">
+                <span>
+                  METHOD ID
+                </span>
 
-              <div className="detail-actions">
+                <strong>
+                  {selectedRequest.method_id ||
+                    "—"}
+                </strong>
+              </div>
 
-                <button
-                  type="button"
-                  className="approve"
-                  disabled={
-                    updatingId ===
-                      selected.id ||
-                    selected.status ===
-                      "Approved"
+              <div className="modal-detail">
+                <span>
+                  CATEGORY
+                </span>
+
+                <strong>
+                  {
+                    selectedRequest.category
                   }
-                  onClick={() =>
-                    updateStatus(
-                      selected.id,
-                      "Approved"
-                    )
-                  }
-                >
-                  {updatingId ===
-                  selected.id
-                    ? "UPDATING..."
-                    : "✓ Approve"}
-                </button>
+                </strong>
+              </div>
 
-                <button
-                  type="button"
-                  className="reject"
-                  disabled={
-                    updatingId ===
-                      selected.id ||
-                    selected.status ===
-                      "Rejected"
-                  }
-                  onClick={() =>
-                    updateStatus(
-                      selected.id,
-                      "Rejected"
-                    )
-                  }
-                >
-                  ✕ Reject
-                </button>
+              <div className="modal-detail">
+                <span>
+                  NETWORK
+                </span>
 
-                {selected.status !==
-                  "Pending Verification" && (
+                <strong>
+                  {selectedRequest.network ||
+                    "—"}
+                </strong>
+              </div>
 
+              <div className="modal-detail">
+                <span>
+                  SENDER ACCOUNT
+                </span>
+
+                <strong>
+                  {selectedRequest.sender_account ||
+                    "—"}
+                </strong>
+              </div>
+
+              <div className="modal-detail">
+                <span>
+                  TRANSACTION ID
+                </span>
+
+                <strong>
+                  {selectedRequest.transaction_id ||
+                    "—"}
+                </strong>
+              </div>
+
+              <div className="modal-detail">
+                <span>
+                  CURRENCY
+                </span>
+
+                <strong>
+                  {selectedRequest.currency ||
+                    "NPR"}
+                </strong>
+              </div>
+
+              <div className="modal-detail">
+                <span>
+                  CREATED
+                </span>
+
+                <strong>
+                  {formatDate(
+                    selectedRequest.created_at
+                  )}
+                </strong>
+              </div>
+
+              <div className="modal-detail">
+                <span>
+                  REVIEWED
+                </span>
+
+                <strong>
+                  {formatDate(
+                    selectedRequest.reviewed_at
+                  )}
+                </strong>
+              </div>
+
+              {selectedRequest.crypto_amount && (
+                <div className="modal-detail">
+                  <span>
+                    CRYPTO AMOUNT
+                  </span>
+
+                  <strong>
+                    {
+                      selectedRequest.crypto_amount
+                    }
+                  </strong>
+                </div>
+              )}
+
+              {selectedRequest.exchange_rate && (
+                <div className="modal-detail">
+                  <span>
+                    EXCHANGE RATE
+                  </span>
+
+                  <strong>
+                    1 USDT ={" "}
+                    {
+                      selectedRequest.exchange_rate
+                    }{" "}
+                    NPR
+                  </strong>
+                </div>
+              )}
+
+              {selectedRequest.wallet_address && (
+                <div className="modal-detail full">
+                  <span>
+                    WALLET ADDRESS
+                  </span>
+
+                  <strong className="break-text">
+                    {
+                      selectedRequest.wallet_address
+                    }
+                  </strong>
+                </div>
+              )}
+
+            </div>
+
+            {/* SCREENSHOT */}
+            <div className="modal-file-section">
+
+              <div className="modal-file-header">
+                <span>
+                  PAYMENT SCREENSHOT
+                </span>
+              </div>
+
+              {selectedRequest.screenshot_name ? (
+                <div className="file-info-card">
+
+                  <div className="file-icon">
+                    📎
+                  </div>
+
+                  <div>
+                    <strong>
+                      {
+                        selectedRequest.screenshot_name
+                      }
+                    </strong>
+
+                    <span>
+                      {formatFileSize(
+                        selectedRequest.screenshot_size
+                      )}
+                    </span>
+                  </div>
+
+                </div>
+              ) : (
+                <div className="no-file">
+                  No screenshot metadata
+                  available.
+                </div>
+              )}
+
+            </div>
+
+            {/* MODAL ACTIONS */}
+            <div className="deposit-modal-actions">
+
+              {normalizeStatus(
+                selectedRequest.status
+              ) ===
+                STATUS.PENDING ? (
+                <>
                   <button
                     type="button"
-                    className="pending"
-                    disabled={
-                      updatingId ===
-                      selected.id
-                    }
+                    className="reject-button large"
                     onClick={() =>
-                      updateStatus(
-                        selected.id,
-                        "Pending Verification"
+                      rejectRequest(
+                        selectedRequest
+                      )
+                    }
+                    disabled={
+                      Boolean(
+                        processingId
                       )
                     }
                   >
-                    ↻ Set Pending
+                    {processingId
+                      ? "Processing..."
+                      : "Reject Deposit"}
                   </button>
 
-                )}
+                  <button
+                    type="button"
+                    className="approve-button large"
+                    onClick={() =>
+                      approveRequest(
+                        selectedRequest
+                      )
+                    }
+                    disabled={
+                      Boolean(
+                        processingId
+                      )
+                    }
+                  >
+                    {processingId
+                      ? "Processing..."
+                      : "Approve Deposit"}
+                  </button>
+                </>
+              ) : (
+                <div className="reviewed-message">
+                  This deposit request has
+                  already been reviewed.
+                </div>
+              )}
 
-              </div>
+            </div>
 
-            </>
-
-          )}
-
-        </aside>
-
-      </div>
-
-    </div>
-  );
-}
-
-/* =========================================================
-   DETAIL COMPONENT
-========================================================= */
-
-function Detail({
-  label,
-  value,
-}) {
-  return (
-    <div className="detail-item">
-
-      <span>
-        {label}
-      </span>
-
-      <strong>
-        {value || "—"}
-      </strong>
+          </div>
+        </div>
+      )}
 
     </div>
   );

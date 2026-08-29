@@ -2,438 +2,330 @@ import { useEffect, useMemo, useState } from "react";
 import "./Deposit.css";
 import { supabase } from "../../../supabaseClient";
 
-const defaultMethods = [
+const FALLBACK_METHODS = [
   {
-    id: "esewa",
+    method_id: "esewa",
     name: "eSewa",
     category: "Local Payment",
     icon: "e",
     color: "#49b64a",
-    recommended: true,
     enabled: true,
-    accountName: "",
-    accountNumber: "",
-    qrImage: "",
-    minAmount: 500,
-    maxAmount: 25000,
+    recommended: true,
+    account_name: "",
+    account_number: "",
+    bank_name: "",
+    branch: "",
+    qr_image: "",
+    network: "",
+    wallet_address: "",
+    min_amount: 500,
+    max_amount: 25000,
+    instructions: "",
   },
   {
-    id: "khalti",
+    method_id: "khalti",
     name: "Khalti",
     category: "Local Payment",
     icon: "K",
     color: "#5c2d91",
-    recommended: true,
     enabled: true,
-    accountName: "",
-    accountNumber: "",
-    qrImage: "",
-    minAmount: 500,
-    maxAmount: 25000,
+    recommended: true,
+    account_name: "",
+    account_number: "",
+    bank_name: "",
+    branch: "",
+    qr_image: "",
+    network: "",
+    wallet_address: "",
+    min_amount: 500,
+    max_amount: 25000,
+    instructions: "",
   },
   {
-    id: "bank",
+    method_id: "bank",
     name: "Bank Transfer",
     category: "Local Payment",
     icon: "B",
     color: "#2563eb",
-    recommended: false,
     enabled: true,
-    accountName: "",
-    accountNumber: "",
-    bankName: "",
+    recommended: false,
+    account_name: "",
+    account_number: "",
+    bank_name: "",
     branch: "",
-    qrImage: "",
-    minAmount: 500,
-    maxAmount: 25000,
+    qr_image: "",
+    network: "",
+    wallet_address: "",
+    min_amount: 500,
+    max_amount: 25000,
+    instructions: "",
   },
-
   {
-    id: "tether-ton",
+    method_id: "tether-ton",
     name: "Tether on TON",
     category: "Cryptocurrency",
     icon: "₮",
     color: "#26a17b",
     enabled: true,
+    recommended: false,
+    account_name: "",
+    account_number: "",
+    bank_name: "",
+    branch: "",
+    qr_image: "",
     network: "TON",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 3,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 3,
+    max_amount: 100000,
+    instructions: "",
   },
   {
-    id: "tether-tron",
+    method_id: "tether-tron",
     name: "Tether on Tron",
     category: "Cryptocurrency",
     icon: "₮",
     color: "#26a17b",
     enabled: true,
+    recommended: false,
+    account_name: "",
+    account_number: "",
+    bank_name: "",
+    branch: "",
+    qr_image: "",
     network: "TRON",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 3,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 3,
+    max_amount: 100000,
+    instructions: "",
   },
   {
-    id: "tether-bsc",
+    method_id: "tether-bsc",
     name: "Tether on BSC",
     category: "Cryptocurrency",
     icon: "₮",
     color: "#26a17b",
     enabled: true,
+    recommended: false,
     network: "BSC",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 3,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 3,
+    max_amount: 100000,
+    instructions: "",
   },
   {
-    id: "tether-ethereum",
+    method_id: "tether-ethereum",
     name: "Tether on Ethereum",
     category: "Cryptocurrency",
     icon: "₮",
     color: "#26a17b",
     enabled: true,
+    recommended: false,
     network: "Ethereum",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 3,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 3,
+    max_amount: 100000,
+    instructions: "",
   },
   {
-    id: "tron",
+    method_id: "tron",
     name: "TRON",
     category: "Cryptocurrency",
     icon: "T",
     color: "#e33b45",
     enabled: true,
+    recommended: false,
     network: "TRON",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 10,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 10,
+    max_amount: 100000,
+    instructions: "",
   },
   {
-    id: "bitcoin",
+    method_id: "bitcoin",
     name: "Bitcoin",
     category: "Cryptocurrency",
     icon: "₿",
     color: "#f7931a",
     enabled: true,
+    recommended: false,
     network: "Bitcoin",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 0.0001,
-    maxAmount: 10,
+    wallet_address: "",
+    min_amount: 0.0001,
+    max_amount: 10,
+    instructions: "",
   },
   {
-    id: "litecoin",
+    method_id: "litecoin",
     name: "Litecoin",
     category: "Cryptocurrency",
     icon: "Ł",
     color: "#345d9d",
     enabled: true,
+    recommended: false,
     network: "Litecoin",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 0.01,
-    maxAmount: 100,
+    wallet_address: "",
+    min_amount: 0.01,
+    max_amount: 100,
+    instructions: "",
   },
   {
-    id: "ethereum",
+    method_id: "ethereum",
     name: "Ethereum",
     category: "Cryptocurrency",
     icon: "Ξ",
     color: "#627eea",
     enabled: true,
+    recommended: false,
     network: "Ethereum",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 0.001,
-    maxAmount: 100,
+    wallet_address: "",
+    min_amount: 0.001,
+    max_amount: 100,
+    instructions: "",
   },
   {
-    id: "bnb",
+    method_id: "bnb",
     name: "Binance Coin BSC",
     category: "Cryptocurrency",
     icon: "B",
     color: "#f3ba2f",
     enabled: true,
+    recommended: false,
     network: "BSC",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 0.01,
-    maxAmount: 100,
+    wallet_address: "",
+    min_amount: 0.01,
+    max_amount: 100,
+    instructions: "",
   },
   {
-    id: "dogecoin",
+    method_id: "dogecoin",
     name: "Dogecoin",
     category: "Cryptocurrency",
     icon: "Ð",
     color: "#c2a633",
     enabled: true,
+    recommended: false,
     network: "Dogecoin",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 10,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 10,
+    max_amount: 100000,
+    instructions: "",
   },
   {
-    id: "usdc-eth",
+    method_id: "usdc-eth",
     name: "USD Coin on Ethereum",
     category: "Cryptocurrency",
     icon: "$",
     color: "#2775ca",
     enabled: true,
+    recommended: false,
     network: "Ethereum",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 3,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 3,
+    max_amount: 100000,
+    instructions: "",
   },
   {
-    id: "xrp",
+    method_id: "xrp",
     name: "XRP",
     category: "Cryptocurrency",
     icon: "X",
     color: "#23292f",
     enabled: true,
+    recommended: false,
     network: "XRP",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 5,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 5,
+    max_amount: 100000,
+    instructions: "",
   },
   {
-    id: "polygon",
+    method_id: "polygon",
     name: "Polygon",
     category: "Cryptocurrency",
     icon: "P",
     color: "#8247e5",
     enabled: true,
+    recommended: false,
     network: "Polygon",
-    walletAddress: "",
-    qrImage: "",
-    minAmount: 1,
-    maxAmount: 100000,
+    wallet_address: "",
+    min_amount: 1,
+    max_amount: 100000,
+    instructions: "",
   },
 ];
 
-/* =========================================================
-   LOCAL STORAGE
-========================================================= */
+function normalizeMethod(row) {
+  return {
+    method_id: row.method_id || row.id || "",
+    name: row.name || row.method_name || "Payment Method",
+    category:
+      row.category ||
+      row.type ||
+      "Local Payment",
 
-function loadMethods() {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem("adminPaymentMethods") || "null"
-    );
+    icon: row.icon || "?",
+    color: row.color || "#2563eb",
 
-    if (!Array.isArray(saved)) {
-      return defaultMethods;
-    }
+    enabled: row.enabled !== false,
+    recommended: row.recommended === true,
 
-    return defaultMethods.map((base) => ({
-      ...base,
-      ...(saved.find(
-        (item) =>
-          item.id === base.id ||
-          item.name === base.name
-      ) || {}),
-    }));
-  } catch {
-    return defaultMethods;
-  }
-}
+    account_name: row.account_name || "",
+    account_number: row.account_number || "",
+    bank_name: row.bank_name || "",
+    branch: row.branch || "",
 
-function loadLocalRequestById(id) {
-  if (!id) return null;
+    qr_image:
+      row.qr_image ||
+      row.qr_image_url ||
+      "",
 
-  try {
-    const requests = JSON.parse(
-      localStorage.getItem("depositRequests") || "[]"
-    );
-
-    if (!Array.isArray(requests)) {
-      return null;
-    }
-
-    return (
-      requests.find(
-        (request) => request.id === id
-      ) || null
-    );
-  } catch {
-    return null;
-  }
-}
-
-function saveLocalRequest(request) {
-  try {
-    const existing = JSON.parse(
-      localStorage.getItem("depositRequests") || "[]"
-    );
-
-    const safeExisting = Array.isArray(existing)
-      ? existing
-      : [];
-
-    const filtered = safeExisting.filter(
-      (item) => item.id !== request.id
-    );
-
-    localStorage.setItem(
-      "depositRequests",
-      JSON.stringify([
-        request,
-        ...filtered,
-      ])
-    );
-
-    localStorage.setItem(
-      "lastDepositRequestId",
-      request.id
-    );
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/* =========================================================
-   SUPABASE HELPERS
-========================================================= */
-
-async function getCurrentUser() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error) {
-    throw error;
-  }
-
-  return user;
-}
-
-async function createSupabaseRequest(request) {
-  /*
-   * IMPORTANT:
-   * user_id contains the logged-in Supabase
-   * user's UUID.
-   */
-
-  if (!request.userId) {
-    throw new Error(
-      "User UUID not found. Please login again."
-    );
-  }
-
-  const row = {
-    id: request.id,
-
-    user_id: request.userId,
-
-    status: request.status,
-
-    method_id: request.methodId,
-    method_name: request.methodName,
-    category: request.category,
-    network: request.network || null,
-
-    amount: request.amount,
-    currency: request.currency,
-
-    crypto_amount:
-      request.cryptoAmount !== null
-        ? request.cryptoAmount
-        : null,
-
-    exchange_rate:
-      request.exchangeRate !== null
-        ? request.exchangeRate
-        : null,
-
+    network: row.network || "",
     wallet_address:
-      request.walletAddress || null,
+      row.wallet_address || "",
 
-    sender_account:
-      request.senderAccount || null,
+    min_amount:
+      row.min_amount !== null &&
+      row.min_amount !== undefined
+        ? Number(row.min_amount)
+        : null,
 
-    sender_name:
-      request.senderName || null,
+    max_amount:
+      row.max_amount !== null &&
+      row.max_amount !== undefined
+        ? Number(row.max_amount)
+        : null,
 
-    transaction_id:
-      request.transactionId || null,
-
-    screenshot_name:
-      request.screenshotName || null,
-
-    screenshot_type:
-      request.screenshotType || null,
-
-    screenshot_size:
-      request.screenshotSize || 0,
+    instructions:
+      row.instructions ||
+      row.customer_instructions ||
+      "",
   };
-
-  const {
-    data,
-    error,
-  } = await supabase
-    .from("deposit_requests")
-    .insert(row)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
 }
 
-async function getSupabaseRequestById(id) {
-  if (!id) return null;
+function formatNumber(value, maximum = 8) {
+  const number = Number(value);
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from("deposit_requests")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) {
-    console.error(
-      "Could not read Supabase deposit request:",
-      error
-    );
-
-    return null;
+  if (!Number.isFinite(number)) {
+    return "0";
   }
 
-  return data;
+  return number.toLocaleString("en-NP", {
+    maximumFractionDigits: maximum,
+  });
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
+function Deposit() {
+  const [methods, setMethods] = useState([]);
 
-function Deposit({ onBack }) {
-  const [methods, setMethods] =
-    useState(loadMethods);
-
-  const [selectedMethod, setSelectedMethod] =
-    useState(null);
-
-  const [search, setSearch] =
+  const [selectedMethodId, setSelectedMethodId] =
     useState("");
 
-  const [amount, setAmount] =
-    useState("");
+  const [loadingMethods, setLoadingMethods] =
+    useState(true);
+
+  const [user, setUser] = useState(null);
+
+  const [amount, setAmount] = useState("");
 
   const [senderAccount, setSenderAccount] =
     useState("");
@@ -444,567 +336,650 @@ function Deposit({ onBack }) {
   const [transactionId, setTransactionId] =
     useState("");
 
-  const [screenshot, setScreenshot] =
+  const [screenshotFile, setScreenshotFile] =
     useState(null);
 
-  const [depositError, setDepositError] =
-    useState("");
-
-  const [depositSubmitted, setDepositSubmitted] =
-    useState(false);
-
-  const [rate, setRate] =
+  const [exchangeRate, setExchangeRate] =
     useState(169.7335108);
 
-  const [cryptoAmount, setCryptoAmount] =
-    useState("");
-
-  const [createdRequest, setCreatedRequest] =
-    useState(null);
-
-  const [isSaving, setIsSaving] =
+  const [submitting, setSubmitting] =
     useState(false);
 
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
   /*
-   * Logged-in Supabase user UUID.
+   * GET LOGGED-IN USER
    */
-  const [userId, setUserId] =
-    useState(null);
+  async function loadUser() {
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
-  /* =======================================================
-     GET LOGGED-IN USER
-  ======================================================= */
+      if (error) {
+        throw error;
+      }
 
-  useEffect(() => {
-    let mounted = true;
+      setUser(user || null);
+    } catch (err) {
+      console.error(
+        "Could not get logged-in user:",
+        err
+      );
 
-    async function loadUser() {
-      try {
-        const user =
-          await getCurrentUser();
+      setUser(null);
+    }
+  }
 
-        if (!mounted) return;
+  /*
+   * LOAD PAYMENT METHODS FROM SUPABASE
+   */
+  async function loadPaymentMethods() {
+    try {
+      setLoadingMethods(true);
+      setError("");
 
-        if (user) {
-          setUserId(user.id);
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("payment_methods")
+        .select("*");
 
-          console.log(
-            "Logged-in Supabase UUID:",
-            user.id
-          );
-        } else {
-          setUserId(null);
+      if (error) {
+        throw error;
+      }
 
-          console.warn(
-            "No logged-in Supabase user."
-          );
-        }
-      } catch (error) {
-        console.error(
-          "Could not get logged-in user:",
-          error
+      let databaseMethods = Array.isArray(data)
+        ? data.map(normalizeMethod)
+        : [];
+
+      /*
+       * Keep only enabled methods.
+       */
+      databaseMethods =
+        databaseMethods.filter(
+          (method) => method.enabled
         );
 
-        if (mounted) {
-          setUserId(null);
-        }
-      }
-    }
+      /*
+       * If DB contains methods,
+       * use them as the live source.
+       *
+       * If DB is empty, use fallback
+       * so the page doesn't become blank.
+       */
+      if (databaseMethods.length > 0) {
+        setMethods(databaseMethods);
 
-    loadUser();
+        setSelectedMethodId(
+          (previous) => {
+            const stillExists =
+              databaseMethods.some(
+                (method) =>
+                  method.method_id ===
+                  previous
+              );
 
-    const {
-      data: authListener,
-    } =
-      supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          const user =
-            session?.user || null;
+            if (stillExists) {
+              return previous;
+            }
 
-          setUserId(
-            user?.id || null
-          );
-
-          if (user) {
-            console.log(
-              "Supabase UUID:",
-              user.id
+            return (
+              databaseMethods[0]
+                ?.method_id || ""
             );
           }
-        }
-      );
-
-    return () => {
-      mounted = false;
-
-      authListener?.subscription?.unsubscribe();
-    };
-  }, []);
-
-  /* =======================================================
-     LOAD PAYMENT CONFIG
-  ======================================================= */
-
-  useEffect(() => {
-    const refresh = () => {
-      setMethods(
-        loadMethods()
-      );
-
-      try {
-        const savedRate =
-          Number(
-            localStorage.getItem(
-              "usdtNprRate"
-            )
+        );
+      } else {
+        const enabledFallback =
+          FALLBACK_METHODS.filter(
+            (method) => method.enabled
           );
 
-        if (savedRate > 0) {
-          setRate(savedRate);
-        }
-      } catch {}
-    };
+        setMethods(enabledFallback);
 
-    refresh();
+        setSelectedMethodId(
+          enabledFallback[0]
+            ?.method_id || ""
+        );
+      }
+    } catch (err) {
+      console.error(
+        "Could not load payment methods:",
+        err
+      );
 
-    window.addEventListener(
-      "storage",
-      refresh
+      /*
+       * Keep UI usable if DB temporarily fails.
+       */
+      const enabledFallback =
+        FALLBACK_METHODS.filter(
+          (method) => method.enabled
+        );
+
+      setMethods(enabledFallback);
+
+      setSelectedMethodId(
+        enabledFallback[0]
+          ?.method_id || ""
+      );
+
+      setError(
+        `Could not load payment methods: ${
+          err?.message ||
+          "Unknown error"
+        }`
+      );
+    } finally {
+      setLoadingMethods(false);
+    }
+  }
+
+  /*
+   * LOAD LIVE RATE
+   *
+   * Current admin panel stores the rate
+   * in localStorage.
+   */
+  function loadExchangeRate() {
+    const saved = Number(
+      localStorage.getItem(
+        "usdtNprRate"
+      )
     );
+
+    if (
+      Number.isFinite(saved) &&
+      saved > 0
+    ) {
+      setExchangeRate(saved);
+    }
+  }
+
+  useEffect(() => {
+    loadUser();
+    loadPaymentMethods();
+    loadExchangeRate();
+
+    /*
+     * Listen for admin-panel changes
+     * when both pages are open in browser.
+     */
+    function handleConfigUpdate() {
+      loadPaymentMethods();
+      loadExchangeRate();
+    }
 
     window.addEventListener(
       "payment-config-updated",
-      refresh
+      handleConfigUpdate
+    );
+
+    window.addEventListener(
+      "storage",
+      handleConfigUpdate
     );
 
     return () => {
       window.removeEventListener(
-        "storage",
-        refresh
+        "payment-config-updated",
+        handleConfigUpdate
       );
 
       window.removeEventListener(
-        "payment-config-updated",
-        refresh
+        "storage",
+        handleConfigUpdate
       );
     };
   }, []);
 
-  /* =======================================================
-     VISIBLE METHODS
-  ======================================================= */
-
-  const visibleMethods =
-    useMemo(
-      () =>
-        methods.filter(
-          (method) =>
-            method.enabled &&
-            method.name
-              .toLowerCase()
-              .includes(
-                search.toLowerCase()
-              )
-        ),
-      [methods, search]
+  /*
+   * SELECTED PAYMENT METHOD
+   */
+  const selectedMethod = useMemo(() => {
+    return (
+      methods.find(
+        (method) =>
+          method.method_id ===
+          selectedMethodId
+      ) || null
     );
+  }, [
+    methods,
+    selectedMethodId,
+  ]);
 
-  const localPayments =
-    visibleMethods.filter(
+  /*
+   * RESET FORM WHEN METHOD CHANGES
+   */
+  useEffect(() => {
+    setAmount("");
+    setSenderAccount("");
+    setSenderName("");
+    setTransactionId("");
+    setScreenshotFile(null);
+    setMessage("");
+    setError("");
+  }, [selectedMethodId]);
+
+  /*
+   * LOCAL METHODS
+   */
+  const localMethods = useMemo(() => {
+    return methods.filter(
       (method) =>
         method.category ===
         "Local Payment"
     );
+  }, [methods]);
 
-  const cryptoPayments =
-    visibleMethods.filter(
+  /*
+   * CRYPTO METHODS
+   */
+  const cryptoMethods = useMemo(() => {
+    return methods.filter(
       (method) =>
         method.category ===
         "Cryptocurrency"
     );
+  }, [methods]);
 
-  const isCrypto =
+  /*
+   * AMOUNT NUMBERS
+   */
+  const numericAmount = Number(amount);
+
+  const validAmount =
+    Number.isFinite(numericAmount) &&
+    numericAmount > 0;
+
+  /*
+   * CRYPTO CALCULATION
+   *
+   * For crypto methods the amount entered
+   * is treated as NPR deposit value.
+   */
+  const calculatedCryptoAmount =
     selectedMethod?.category ===
-    "Cryptocurrency";
+      "Cryptocurrency" &&
+    validAmount &&
+    exchangeRate > 0
+      ? numericAmount /
+        exchangeRate
+      : 0;
 
-  const isTether =
-    selectedMethod?.name
-      ?.toLowerCase()
-      .includes("tether");
+  /*
+   * COPY WALLET
+   */
+  async function copyWalletAddress() {
+    if (
+      !selectedMethod?.wallet_address
+    ) {
+      return;
+    }
 
-  const cryptoUnit =
-    isTether
-      ? "USDT"
-      : selectedMethod?.name || "";
+    try {
+      await navigator.clipboard.writeText(
+        selectedMethod.wallet_address
+      );
 
-  /* =======================================================
-     OPEN PAYMENT METHOD
-  ======================================================= */
+      setMessage(
+        "Wallet address copied."
+      );
 
-  function openPaymentMethod(
-    method
+      setError("");
+    } catch {
+      setError(
+        "Could not copy wallet address."
+      );
+    }
+  }
+
+  /*
+   * SCREENSHOT VALIDATION
+   */
+  function handleScreenshotChange(
+    event
   ) {
-    setSelectedMethod(method);
+    const file =
+      event.target.files?.[0];
 
-    setAmount("");
-    setCryptoAmount("");
-
-    setSenderAccount("");
-    setSenderName("");
-
-    setTransactionId("");
-
-    setScreenshot(null);
-
-    setDepositError("");
-    setDepositSubmitted(false);
-
-    setCreatedRequest(null);
-    setIsSaving(false);
-  }
-
-  /* =======================================================
-     COPY
-  ======================================================= */
-
-  async function copyText(text) {
-    if (!text) return;
-
-    try {
-      await navigator.clipboard?.writeText(
-        text
-      );
-    } catch (error) {
-      console.error(
-        "Copy failed:",
-        error
-      );
-    }
-  }
-
-  /* =======================================================
-     CREATE REQUEST
-  ======================================================= */
-
-  async function submitDeposit(e) {
-    e.preventDefault();
-
-    if (isSaving) {
+    if (!file) {
+      setScreenshotFile(null);
       return;
     }
 
-    setDepositError("");
+    const maxSize =
+      20 * 1024 * 1024;
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "application/pdf",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        file.type
+      )
+    ) {
+      setError(
+        "Screenshot must be JPG, JPEG, PNG or PDF."
+      );
+
+      event.target.value = "";
+      setScreenshotFile(null);
+
+      return;
+    }
+
+    if (file.size > maxSize) {
+      setError(
+        "Screenshot must be 20 MB or smaller."
+      );
+
+      event.target.value = "";
+      setScreenshotFile(null);
+
+      return;
+    }
+
+    setError("");
+    setScreenshotFile(file);
+  }
+
+  /*
+   * CREATE DEPOSIT REQUEST
+   */
+  async function createDepositRequest(
+    event
+  ) {
+    event.preventDefault();
+
+    if (submitting) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
 
     /*
-     * Make sure user is logged in.
+     * Check logged-in user again immediately
+     * before insert.
      */
-    let currentUser = null;
+    let currentUser = user;
 
     try {
+      const {
+        data: {
+          user: authenticatedUser,
+        },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) {
+        throw authError;
+      }
+
       currentUser =
-        await getCurrentUser();
-    } catch (error) {
-      console.error(
-        "User authentication check failed:",
-        error
-      );
-    }
+        authenticatedUser || null;
 
-    if (!currentUser) {
-      setDepositError(
-        "You must be logged in before creating a deposit request."
+      setUser(currentUser);
+    } catch (err) {
+      console.error(
+        "Authentication check failed:",
+        err
+      );
+
+      setError(
+        "Could not verify your login session."
       );
 
       return;
     }
 
     /*
-     * This is the Supabase Auth UUID.
+     * USER MUST BE LOGGED IN
      */
-    const currentUserId =
-      currentUser.id;
+    if (!currentUser) {
+      setError(
+        "Please login before creating a deposit request."
+      );
 
-    setUserId(currentUserId);
+      return;
+    }
 
-    console.log(
-      "Creating deposit for user UUID:",
-      currentUserId
-    );
-
+    /*
+     * PAYMENT METHOD CHECK
+     */
     if (!selectedMethod) {
-      setDepositError(
+      setError(
         "Please select a payment method."
       );
 
       return;
     }
 
-    const value =
+    /*
+     * AMOUNT CHECK
+     */
+    const amountNumber =
       Number(amount);
 
-    const min =
-      Number(
-        selectedMethod.minAmount ??
-          (selectedMethod.category ===
-          "Local Payment"
-            ? 500
-            : 0)
+    if (
+      !Number.isFinite(
+        amountNumber
+      ) ||
+      amountNumber <= 0
+    ) {
+      setError(
+        "Please enter a valid deposit amount."
       );
 
-    const max =
-      Number(
-        selectedMethod.maxAmount ??
-          (selectedMethod.category ===
-          "Local Payment"
-            ? 25000
-            : Infinity)
+      return;
+    }
+
+    /*
+     * MIN LIMIT
+     */
+    if (
+      selectedMethod.min_amount !==
+        null &&
+      amountNumber <
+        Number(
+          selectedMethod.min_amount
+        )
+    ) {
+      setError(
+        `Minimum deposit is ${formatNumber(
+          selectedMethod.min_amount
+        )}.`
       );
 
-    /* =====================================================
-       CRYPTO VALIDATION
-    ===================================================== */
-
-    if (isCrypto) {
-      const cryptoValue =
-        Number(cryptoAmount);
-
-      if (
-        !cryptoValue ||
-        cryptoValue <= 0
-      ) {
-        setDepositError(
-          `Please enter a valid ${cryptoUnit} amount.`
-        );
-
-        return;
-      }
-
-      if (
-        cryptoValue < min ||
-        cryptoValue > max
-      ) {
-        setDepositError(
-          `${cryptoUnit} amount must be between ${min} and ${max}.`
-        );
-
-        return;
-      }
+      return;
     }
 
-    /* =====================================================
-       LOCAL PAYMENT VALIDATION
-    ===================================================== */
+    /*
+     * MAX LIMIT
+     */
+    if (
+      selectedMethod.max_amount !==
+        null &&
+      amountNumber >
+        Number(
+          selectedMethod.max_amount
+        )
+    ) {
+      setError(
+        `Maximum deposit is ${formatNumber(
+          selectedMethod.max_amount
+        )}.`
+      );
 
-    else {
-      if (
-        !value ||
-        value < min ||
-        value > max
-      ) {
-        setDepositError(
-          `Amount must be between NPR ${min.toLocaleString()} and NPR ${max.toLocaleString()}.`
-        );
-
-        return;
-      }
+      return;
     }
 
-    /* =====================================================
-       LOCAL REQUIRED FIELDS
-    ===================================================== */
-
+    /*
+     * LOCAL PAYMENT REQUIRED FIELDS
+     */
     if (
       selectedMethod.category ===
       "Local Payment"
     ) {
-      if (
-        !senderAccount.trim() ||
-        !senderName.trim()
-      ) {
-        setDepositError(
-          "Please enter your payment account number and account name."
+      if (!senderAccount.trim()) {
+        setError(
+          `Please enter your ${selectedMethod.name} Account Number.`
         );
 
         return;
       }
 
-      if (
-        !transactionId.trim()
-      ) {
-        setDepositError(
-          "Please enter the Transaction ID / Reference No."
-        );
-
-        return;
-      }
-
-      if (!screenshot) {
-        setDepositError(
-          "Please upload your payment screenshot."
+      if (!senderName.trim()) {
+        setError(
+          `Please enter your ${selectedMethod.name} Account Name.`
         );
 
         return;
       }
     }
 
-    /* =====================================================
-       CRYPTO REQUIRED FIELDS
-    ===================================================== */
+    /*
+     * TRANSACTION ID
+     */
+    if (!transactionId.trim()) {
+      setError(
+        "Please enter the Transaction ID / Reference Number."
+      );
 
-    else {
-      if (
-        !selectedMethod.walletAddress
-      ) {
-        setDepositError(
-          "This cryptocurrency wallet is not configured by admin yet."
-        );
-
-        return;
-      }
-
-      if (
-        !transactionId.trim()
-      ) {
-        setDepositError(
-          "Please enter the transaction hash."
-        );
-
-        return;
-      }
+      return;
     }
 
-    /* =====================================================
-       REQUEST ID
-    ===================================================== */
+    /*
+     * SCREENSHOT
+     */
+    if (!screenshotFile) {
+      setError(
+        "Please upload your payment screenshot."
+      );
 
-    const requestId =
-      `DP${Date.now()
-        .toString()
-        .slice(-8)}`;
-
-    const createdAt =
-      new Date().toISOString();
-
-    /* =====================================================
-       REQUEST OBJECT
-    ===================================================== */
-
-    const request = {
-      id: requestId,
-
-      /*
-       * IMPORTANT:
-       * Logged-in Supabase UUID.
-       */
-      userId: currentUserId,
-
-      createdAt,
-
-      status:
-        "Pending Verification",
-
-      methodId:
-        selectedMethod.id,
-
-      methodName:
-        selectedMethod.name,
-
-      category:
-        selectedMethod.category,
-
-      network:
-        selectedMethod.network || "",
-
-      amount:
-        isCrypto
-          ? Number(cryptoAmount)
-          : value,
-
-      currency:
-        isCrypto
-          ? cryptoUnit
-          : "NPR",
-
-      cryptoAmount:
-        isCrypto
-          ? Number(cryptoAmount)
-          : null,
-
-      exchangeRate:
-        isTether
-          ? Number(rate)
-          : null,
-
-      walletAddress:
-        isCrypto
-          ? selectedMethod.walletAddress
-          : "",
-
-      senderAccount:
-        senderAccount.trim(),
-
-      senderName:
-        senderName.trim(),
-
-      transactionId:
-        transactionId.trim(),
-
-      screenshotName:
-        screenshot?.name || "",
-
-      screenshotType:
-        screenshot?.type || "",
-
-      screenshotSize:
-        screenshot?.size || 0,
-    };
-
-    /* =====================================================
-       SAVE
-    ===================================================== */
-
-    setIsSaving(true);
+      return;
+    }
 
     try {
+      setSubmitting(true);
+
       /*
-       * Local cache.
+       * CRYPTO VALUE
        */
-      saveLocalRequest(
-        request
+      const cryptoAmount =
+        selectedMethod.category ===
+        "Cryptocurrency"
+          ? amountNumber /
+            exchangeRate
+          : null;
+
+      /*
+       * IMPORTANT
+       *
+       * user_id is the authenticated
+       * Supabase UUID.
+       */
+      const payload = {
+        user_id: currentUser.id,
+
+        method_id:
+          selectedMethod.method_id,
+
+        method_name:
+          selectedMethod.name,
+
+        category:
+          selectedMethod.category,
+
+        network:
+          selectedMethod.network ||
+          null,
+
+        amount:
+          amountNumber,
+
+        currency:
+          selectedMethod.category ===
+          "Cryptocurrency"
+            ? "NPR"
+            : "NPR",
+
+        crypto_amount:
+          cryptoAmount !== null
+            ? cryptoAmount
+            : null,
+
+        exchange_rate:
+          selectedMethod.category ===
+          "Cryptocurrency"
+            ? exchangeRate
+            : null,
+
+        wallet_address:
+          selectedMethod.wallet_address ||
+          null,
+
+        sender_account:
+          senderAccount.trim() ||
+          null,
+
+        sender_name:
+          senderName.trim() ||
+          null,
+
+        transaction_id:
+          transactionId.trim(),
+
+        screenshot_name:
+          screenshotFile.name,
+
+        screenshot_size:
+          screenshotFile.size,
+
+        status:
+          "Pending Verification",
+
+        reviewed_at: null,
+      };
+
+      console.log(
+        "Creating deposit request:",
+        payload
+      );
+
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("deposit_requests")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      console.log(
+        "Deposit request created:",
+        data
       );
 
       /*
-       * Save to Supabase.
-       *
-       * user_id is automatically
-       * inserted from currentUser.id.
-       */
-      try {
-        await createSupabaseRequest(
-          request
-        );
-      } catch (
-        supabaseError
-      ) {
-        console.error(
-          "Supabase save failed:",
-          supabaseError
-        );
-
-        setDepositError(
-          `Request saved locally, but Supabase save failed: ${
-            supabaseError.message ||
-            "Unknown error"
-          }`
-        );
-
-        setIsSaving(false);
-
-        return;
-      }
-
-      /*
-       * Notify admin page.
+       * Notify admin page if it is open
+       * in the same browser.
        */
       window.dispatchEvent(
         new Event(
@@ -1012,1214 +987,843 @@ function Deposit({ onBack }) {
         )
       );
 
-      setCreatedRequest(
-        request
+      setMessage(
+        "Deposit request submitted successfully. Please wait for verification."
       );
 
-      setDepositSubmitted(
-        true
-      );
-    } catch (error) {
-      console.error(
-        "Deposit request error:",
-        error
-      );
+      /*
+       * Reset form
+       */
+      setAmount("");
+      setSenderAccount("");
+      setSenderName("");
+      setTransactionId("");
+      setScreenshotFile(null);
 
-      setDepositError(
-        "Could not create the deposit request. Please try again."
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  /* =======================================================
-     SYNC REQUEST STATUS
-  ======================================================= */
-
-  useEffect(() => {
-    if (
-      !createdRequest?.id
-    ) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function syncStatus() {
-      const supabaseRequest =
-        await getSupabaseRequestById(
-          createdRequest.id
+      const fileInput =
+        document.getElementById(
+          "deposit-screenshot"
         );
 
-      if (
-        supabaseRequest &&
-        !cancelled
-      ) {
-        const updatedRequest = {
-          ...createdRequest,
-
-          /*
-           * Keep user UUID.
-           */
-          userId:
-            supabaseRequest.user_id ||
-            createdRequest.userId,
-
-          status:
-            supabaseRequest.status ||
-            createdRequest.status,
-
-          reviewedAt:
-            supabaseRequest.reviewed_at ||
-            createdRequest.reviewedAt ||
-            null,
-        };
-
-        setCreatedRequest(
-          updatedRequest
-        );
-
-        try {
-          const requests =
-            JSON.parse(
-              localStorage.getItem(
-                "depositRequests"
-              ) || "[]"
-            );
-
-          if (
-            Array.isArray(
-              requests
-            )
-          ) {
-            const updated =
-              requests.map(
-                (item) =>
-                  item.id ===
-                  createdRequest.id
-                    ? {
-                        ...item,
-                        ...updatedRequest,
-                      }
-                    : item
-              );
-
-            localStorage.setItem(
-              "depositRequests",
-              JSON.stringify(
-                updated
-              )
-            );
-          }
-        } catch {}
+      if (fileInput) {
+        fileInput.value = "";
       }
-    }
-
-    syncStatus();
-
-    const interval =
-      window.setInterval(
-        syncStatus,
-        2000
+    } catch (err) {
+      console.error(
+        "Could not create deposit request:",
+        err
       );
 
-    window.addEventListener(
-      "storage",
-      syncStatus
-    );
-
-    window.addEventListener(
-      "deposit-request-updated",
-      syncStatus
-    );
-
-    const channel =
-      supabase
-        .channel(
-          `deposit-request-${createdRequest.id}`
+      /*
+       * Helpful RLS message
+       */
+      if (
+        String(
+          err?.message || ""
+        ).toLowerCase().includes(
+          "row-level security"
         )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "deposit_requests",
-            filter: `id=eq.${createdRequest.id}`,
-          },
-          (payload) => {
-            const row =
-              payload.new;
-
-            if (
-              row &&
-              row.id ===
-                createdRequest.id
-            ) {
-              setCreatedRequest(
-                (previous) => ({
-                  ...previous,
-
-                  userId:
-                    row.user_id ||
-                    previous.userId,
-
-                  status:
-                    row.status ||
-                    previous.status,
-
-                  reviewedAt:
-                    row.reviewed_at ||
-                    previous.reviewedAt ||
-                    null,
-                })
-              );
-            }
-          }
-        )
-        .subscribe();
-
-    return () => {
-      cancelled = true;
-
-      window.clearInterval(
-        interval
-      );
-
-      window.removeEventListener(
-        "storage",
-        syncStatus
-      );
-
-      window.removeEventListener(
-        "deposit-request-updated",
-        syncStatus
-      );
-
-      supabase.removeChannel(
-        channel
-      );
-    };
-  }, [createdRequest?.id]);
-
-  /* =======================================================
-     STATUS
-  ======================================================= */
-
-  const currentStatus =
-    createdRequest?.status ||
-    "Pending Verification";
-
-  const statusClass =
-    String(currentStatus)
-      .toLowerCase()
-      .replace(
-        /\s+/g,
-        "-"
-      );
-
-  function statusMessage() {
-    if (
-      currentStatus ===
-      "Approved"
-    ) {
-      return "Your deposit has been approved by the admin.";
+      ) {
+        setError(
+          "Deposit request was blocked by Supabase security policy. Make sure the user_id RLS policy is enabled."
+        );
+      } else {
+        setError(
+          `Could not create deposit request: ${
+            err?.message ||
+            "Unknown error"
+          }`
+        );
+      }
+    } finally {
+      setSubmitting(false);
     }
-
-    if (
-      currentStatus ===
-      "Rejected"
-    ) {
-      return "Your deposit request was rejected. Please contact support or create a new request.";
-    }
-
-    return "Your deposit is waiting for admin verification.";
   }
-
-  /* =======================================================
-     RENDER
-  ======================================================= */
 
   return (
     <div className="deposit-page">
 
-      {/* HEADER */}
+      {/* PAGE HEADER */}
+      <div className="deposit-header">
 
-      <header className="deposit-header">
-
-        <button
-          className="deposit-back"
-          onClick={onBack}
-        >
-          ← Back
-        </button>
-
-        <div className="deposit-logo">
-          BET<span>ZONE</span>
-        </div>
-
-        <div className="deposit-title-small">
-          Deposit
-        </div>
-
-      </header>
-
-      {/* MAIN */}
-
-      <main className="deposit-content">
-
-        <div className="deposit-heading">
+        <div>
+          <div className="deposit-kicker">
+            DEPOSIT
+          </div>
 
           <h1>
             Deposit
           </h1>
 
           <p>
-            Select your preferred payment method
+            Choose your preferred payment
+            method and submit your deposit.
           </p>
-
         </div>
 
-        {/* SEARCH */}
+      </div>
 
-        <input
-          className="deposit-search"
-          type="text"
-          placeholder="Search payment method..."
-          value={search}
-          onChange={(e) =>
-            setSearch(
-              e.target.value
-            )
-          }
-        />
+      {/* ALERT */}
+      {error && (
+        <div className="deposit-alert error">
+          <span>!</span>
 
-        {/* LOCAL PAYMENTS */}
-
-        <section className="payment-section">
-
-          <div className="payment-section-heading">
-
-            <h2>
-              Local Payments
-            </h2>
-
-            <span>
-              {localPayments.length}
-            </span>
-
+          <div>
+            {error}
           </div>
 
-          <div className="payment-grid">
-
-            {localPayments.map(
-              (method) => (
-                <button
-                  className="payment-card"
-                  key={method.id}
-                  onClick={() =>
-                    openPaymentMethod(
-                      method
-                    )
-                  }
-                >
-
-                  {method.recommended && (
-                    <span className="recommended-badge">
-                      RECOMMENDED
-                    </span>
-                  )}
-
-                  <div
-                    className="payment-icon"
-                    style={{
-                      background:
-                        method.color,
-                    }}
-                  >
-                    {method.icon}
-                  </div>
-
-                  <strong>
-                    {method.name}
-                  </strong>
-
-                  <span className="payment-arrow">
-                    →
-                  </span>
-
-                </button>
-              )
-            )}
-
-          </div>
-
-        </section>
-
-        {/* CRYPTO */}
-
-        <section className="payment-section">
-
-          <div className="payment-section-heading">
-
-            <h2>
-              Cryptocurrency
-            </h2>
-
-            <span>
-              {cryptoPayments.length}
-            </span>
-
-          </div>
-
-          <div className="payment-grid">
-
-            {cryptoPayments.map(
-              (method) => (
-                <button
-                  className="payment-card"
-                  key={method.id}
-                  onClick={() =>
-                    openPaymentMethod(
-                      method
-                    )
-                  }
-                >
-
-                  <div
-                    className="payment-icon"
-                    style={{
-                      background:
-                        method.color,
-                    }}
-                  >
-                    {method.icon}
-                  </div>
-
-                  <strong>
-                    {method.name}
-                  </strong>
-
-                  <small>
-                    {method.network}
-                  </small>
-
-                  <span className="payment-arrow">
-                    →
-                  </span>
-
-                </button>
-              )
-            )}
-
-          </div>
-
-        </section>
-
-      </main>
-
-      {/* MODAL */}
-
-      {selectedMethod && (
-
-        <div
-          className="payment-overlay"
-          onClick={() =>
-            setSelectedMethod(
-              null
-            )
-          }
-        >
-
-          <div
-            className="payment-modal"
-            onClick={(e) =>
-              e.stopPropagation()
+          <button
+            type="button"
+            onClick={() =>
+              setError("")
             }
           >
+            ×
+          </button>
+        </div>
+      )}
 
-            <button
-              className="modal-close"
-              onClick={() =>
-                setSelectedMethod(
-                  null
-                )
-              }
-            >
-              ×
-            </button>
+      {message && (
+        <div className="deposit-alert success">
+          <span>✓</span>
 
-            <div
-              className="modal-payment-icon"
-              style={{
-                background:
-                  selectedMethod.color,
-              }}
-            >
-              {selectedMethod.icon}
-            </div>
+          <div>
+            {message}
+          </div>
 
-            <h2>
-              {selectedMethod.name}
-            </h2>
+          <button
+            type="button"
+            onClick={() =>
+              setMessage("")
+            }
+          >
+            ×
+          </button>
+        </div>
+      )}
 
-            {/* CRYPTO */}
+      {/* PAYMENT METHODS */}
+      <section className="deposit-methods-section">
 
-            {isCrypto ? (
-              <>
+        <div className="section-kicker">
+          PAYMENT METHODS
+        </div>
 
-                <div className="detail-row">
+        <h2>
+          Choose Payment Method
+        </h2>
 
-                  <span>
-                    Network
-                  </span>
+        {loadingMethods ? (
+          <div className="deposit-loading">
+            Loading payment methods...
+          </div>
+        ) : (
+          <>
+            {/* LOCAL */}
+            {localMethods.length > 0 && (
+              <div className="payment-category">
 
-                  <strong>
-                    {selectedMethod.network ||
-                      "Not configured"}
-                  </strong>
+                <h3>
+                  Local Payments
+                </h3>
 
-                </div>
+                <div className="payment-method-grid">
 
-                {isTether && (
-
-                  <div className="rate-box">
-                    1 USDT ={" "}
-                    {Number(rate).toFixed(
-                      7
-                    )}{" "}
-                    NPR
-                  </div>
-
-                )}
-
-                <p className="modal-subtitle">
-                  Copy the address or scan the QR code:
-                </p>
-
-                {selectedMethod.qrImage ? (
-
-                  <div className="qr-box">
-
-                    <img
-                      src={
-                        selectedMethod.qrImage
-                      }
-                      alt={`${selectedMethod.name} QR`}
-                      className="admin-qr-image"
-                    />
-
-                  </div>
-
-                ) : (
-
-                  <div className="qr-box">
-
-                    <div className="qr-not-configured">
-                      QR not configured
-                    </div>
-
-                  </div>
-
-                )}
-
-                <div className="wallet-box">
-
-                  <span>
-                    {selectedMethod.walletAddress ||
-                      "Wallet address not configured"}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyText(
-                        selectedMethod.walletAddress
-                      )
-                    }
-                  >
-                    Copy
-                  </button>
-
-                </div>
-
-                <div className="warning-box">
-
-                  Send only through the configured{" "}
-
-                  <strong>
-                    {selectedMethod.network}
-                  </strong>{" "}
-
-                  network. Sending through another
-                  network can result in loss of funds.
-
-                </div>
-
-                {/* SUCCESS */}
-
-                {depositSubmitted ? (
-
-                  <div
-                    className={`success-box deposit-status-${statusClass}`}
-                  >
-
-                    <strong>
-
-                      {currentStatus ===
-                      "Approved"
-                        ? "Deposit Approved"
-                        : currentStatus ===
-                          "Rejected"
-                        ? "Deposit Rejected"
-                        : "Deposit Request Created"}
-
-                    </strong>
-
-                    <span>
-                      Status:{" "}
-                      {currentStatus}
-                    </span>
-
-                    <span>
-                      Your request ID:{" "}
-                      {createdRequest?.id ||
-                        "Created"}
-                    </span>
-
-                    <small>
-                      {statusMessage()}
-                    </small>
-
-                    {createdRequest?.userId && (
-
-                      <small>
-                        User ID:{" "}
-                        {createdRequest.userId}
-                      </small>
-
-                    )}
-
-                    {createdRequest?.reviewedAt && (
-
-                      <small>
-                        Reviewed:{" "}
-                        {new Date(
-                          createdRequest.reviewedAt
-                        ).toLocaleString()}
-                      </small>
-
-                    )}
-
-                  </div>
-
-                ) : (
-
-                  <form
-                    className="local-deposit-form"
-                    onSubmit={
-                      submitDeposit
-                    }
-                  >
-
-                    <div className="form-field">
-
-                      <label>
-                        Crypto Amount
-                      </label>
-
-                      <input
-                        type="number"
-                        min={
-                          selectedMethod.minAmount ??
-                          0
+                  {localMethods.map(
+                    (method) => (
+                      <button
+                        key={
+                          method.method_id
                         }
-                        max={
-                          selectedMethod.maxAmount ??
-                          undefined
-                        }
-                        step="any"
-                        value={
-                          cryptoAmount
-                        }
-                        onChange={(e) => {
-
-                          const v =
-                            e.target.value;
-
-                          setCryptoAmount(
-                            v
-                          );
-
-                          if (
-                            isTether &&
-                            Number(v) > 0
-                          ) {
-
-                            setAmount(
-                              String(
-                                (
-                                  Number(v) *
-                                  Number(rate)
-                                ).toFixed(2)
-                              )
-                            );
-
-                          } else {
-
-                            setAmount(
-                              ""
-                            );
-
-                          }
-
-                        }}
-                        placeholder={`Enter ${cryptoUnit}`}
-                      />
-
-                      <small>
-                        Minimum:{" "}
-                        {selectedMethod.minAmount ??
-                          0}{" "}
-                        {cryptoUnit}
-
-                        {" • "}
-
-                        Maximum:{" "}
-                        {selectedMethod.maxAmount ??
-                          "No limit"}{" "}
-                        {cryptoUnit}
-                      </small>
-
-                    </div>
-
-                    {isTether && (
-
-                      <div className="form-field">
-
-                        <label>
-                          NPR Value
-                        </label>
-
-                        <input
-                          type="text"
-                          value={
-                            amount
-                              ? `${Number(
-                                  amount
-                                ).toLocaleString()} NPR`
+                        type="button"
+                        className={
+                          `payment-method-card ${
+                            selectedMethodId ===
+                            method.method_id
+                              ? "selected"
                               : ""
-                          }
-                          readOnly
-                        />
-
-                      </div>
-
-                    )}
-
-                    <div className="form-field">
-
-                      <label>
-                        Transaction Hash / ID
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          transactionId
+                          }`
                         }
-                        onChange={(e) =>
-                          setTransactionId(
-                            e.target.value
+                        onClick={() =>
+                          setSelectedMethodId(
+                            method.method_id
                           )
                         }
-                        placeholder="Enter transaction hash"
-                      />
+                      >
 
-                    </div>
+                        <div
+                          className="payment-method-icon"
+                          style={{
+                            background:
+                              method.color ||
+                              "#2563eb",
+                          }}
+                        >
+                          {method.icon ||
+                            "?"}
+                        </div>
 
-                    {depositError && (
+                        <div className="payment-method-info">
 
-                      <div className="deposit-error">
-                        {depositError}
-                      </div>
+                          <div className="payment-method-title">
 
-                    )}
+                            <strong>
+                              {method.name}
+                            </strong>
 
-                    <button
-                      type="submit"
-                      className="deposit-submit"
-                      disabled={
-                        isSaving
-                      }
-                    >
+                            {method.recommended && (
+                              <span className="recommended-badge">
+                                RECOMMENDED
+                              </span>
+                            )}
 
-                      {isSaving
-                        ? "CREATING..."
-                        : "Create Deposit Request"}
+                          </div>
 
-                    </button>
+                          <span>
+                            {method.category}
+                          </span>
 
-                  </form>
+                        </div>
 
-                )}
+                        <div className="payment-method-arrow">
+                          {selectedMethodId ===
+                          method.method_id
+                            ? "✓"
+                            : "›"}
+                        </div>
 
-              </>
+                      </button>
+                    )
+                  )}
 
-            ) : (
+                </div>
 
-              /* LOCAL PAYMENT */
+              </div>
+            )}
 
-              <>
+            {/* CRYPTO */}
+            {cryptoMethods.length > 0 && (
+              <div className="payment-category">
 
-                <p className="modal-subtitle">
+                <h3>
+                  Cryptocurrency
+                </h3>
 
-                  Before creating a request, transfer
-                  the funds within 10 minutes using the
-                  payment details provided below.
+                <div className="payment-method-grid">
 
+                  {cryptoMethods.map(
+                    (method) => (
+                      <button
+                        key={
+                          method.method_id
+                        }
+                        type="button"
+                        className={
+                          `payment-method-card ${
+                            selectedMethodId ===
+                            method.method_id
+                              ? "selected"
+                              : ""
+                          }`
+                        }
+                        onClick={() =>
+                          setSelectedMethodId(
+                            method.method_id
+                          )
+                        }
+                      >
+
+                        <div
+                          className="payment-method-icon"
+                          style={{
+                            background:
+                              method.color ||
+                              "#2563eb",
+                          }}
+                        >
+                          {method.icon ||
+                            "?"}
+                        </div>
+
+                        <div className="payment-method-info">
+
+                          <div className="payment-method-title">
+
+                            <strong>
+                              {method.name}
+                            </strong>
+
+                            {method.recommended && (
+                              <span className="recommended-badge">
+                                RECOMMENDED
+                              </span>
+                            )}
+
+                          </div>
+
+                          <span>
+                            {method.category}
+
+                            {method.network
+                              ? ` • ${method.network}`
+                              : ""}
+                          </span>
+
+                        </div>
+
+                        <div className="payment-method-arrow">
+                          {selectedMethodId ===
+                          method.method_id
+                            ? "✓"
+                            : "›"}
+                        </div>
+
+                      </button>
+                    )
+                  )}
+
+                </div>
+
+              </div>
+            )}
+          </>
+        )}
+
+      </section>
+
+      {/* SELECTED METHOD */}
+      {selectedMethod && (
+        <section className="selected-method-section">
+
+          <div className="selected-method-heading">
+
+            <div
+              className="selected-method-icon"
+              style={{
+                background:
+                  selectedMethod.color ||
+                  "#2563eb",
+              }}
+            >
+              {selectedMethod.icon ||
+                "?"}
+            </div>
+
+            <div>
+
+              <div className="section-kicker">
+                SELECTED METHOD
+              </div>
+
+              <h2>
+                {selectedMethod.name}
+              </h2>
+
+              <p>
+                {selectedMethod.category}
+
+                {selectedMethod.network
+                  ? ` • ${selectedMethod.network}`
+                  : ""}
+              </p>
+
+            </div>
+
+          </div>
+
+          {/* PAYMENT DETAILS */}
+          <div className="payment-details-card">
+
+            <div className="section-kicker">
+              PAYMENT DETAILS
+            </div>
+
+            <div className="payment-instruction">
+
+              <strong>
+                Before creating a request
+              </strong>
+
+              <p>
+                Transfer the funds within
+                10 minutes using the payment
+                details provided below.
+              </p>
+
+            </div>
+
+            {/* ADMIN INSTRUCTIONS */}
+            {selectedMethod.instructions && (
+              <div className="admin-payment-instructions">
+
+                <strong>
+                  Payment Instructions
+                </strong>
+
+                <p>
+                  {selectedMethod.instructions}
                 </p>
 
-                {selectedMethod.bankName && (
+              </div>
+            )}
 
-                  <div className="detail-row">
+            {/* LOCAL PAYMENT DETAILS */}
+            {selectedMethod.category ===
+              "Local Payment" && (
+              <div className="configured-details">
+
+                {selectedMethod.account_name && (
+                  <div className="configured-detail">
+
+                    <span>
+                      Account Name
+                    </span>
+
+                    <strong>
+                      {selectedMethod.account_name}
+                    </strong>
+
+                  </div>
+                )}
+
+                {selectedMethod.account_number && (
+                  <div className="configured-detail">
+
+                    <span>
+                      Account Number
+                    </span>
+
+                    <strong>
+                      {selectedMethod.account_number}
+                    </strong>
+
+                  </div>
+                )}
+
+                {selectedMethod.bank_name && (
+                  <div className="configured-detail">
 
                     <span>
                       Bank Name
                     </span>
 
                     <strong>
-                      {
-                        selectedMethod.bankName
-                      }
+                      {selectedMethod.bank_name}
                     </strong>
 
                   </div>
-
                 )}
 
-                <div className="detail-row">
-
-                  <span>
-                    Account Number
-                  </span>
-
-                  <div className="copy-line">
-
-                    <strong>
-                      {
-                        selectedMethod.accountNumber ||
-                        "Not configured"
-                      }
-                    </strong>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        copyText(
-                          selectedMethod.accountNumber
-                        )
-                      }
-                    >
-                      Copy
-                    </button>
-
-                  </div>
-
-                </div>
-
-                <div className="detail-row">
-
-                  <span>
-                    Account Name
-                  </span>
-
-                  <strong>
-                    {
-                      selectedMethod.accountName ||
-                      "Not configured"
-                    }
-                  </strong>
-
-                </div>
-
                 {selectedMethod.branch && (
-
-                  <div className="detail-row">
+                  <div className="configured-detail">
 
                     <span>
                       Branch
                     </span>
 
                     <strong>
-                      {
-                        selectedMethod.branch
-                      }
+                      {selectedMethod.branch}
                     </strong>
 
                   </div>
-
                 )}
 
-                {selectedMethod.qrImage ? (
+              </div>
+            )}
 
-                  <div className="qr-box">
+            {/* CRYPTO DETAILS */}
+            {selectedMethod.category ===
+              "Cryptocurrency" && (
+              <div className="crypto-details">
 
-                    <img
-                      src={
-                        selectedMethod.qrImage
-                      }
-                      alt={`${selectedMethod.name} QR`}
-                      className="admin-qr-image"
-                    />
+                {selectedMethod.network && (
+                  <div className="configured-detail">
 
-                  </div>
-
-                ) : (
-
-                  <div className="qr-box">
-
-                    <div className="qr-not-configured">
-                      QR not configured by admin
-                    </div>
-
-                  </div>
-
-                )}
-
-                {/* SUCCESS */}
-
-                {depositSubmitted ? (
-
-                  <div
-                    className={`success-box deposit-status-${statusClass}`}
-                  >
+                    <span>
+                      Network
+                    </span>
 
                     <strong>
-
-                      {currentStatus ===
-                      "Approved"
-                        ? "Deposit Approved"
-                        : currentStatus ===
-                          "Rejected"
-                        ? "Deposit Rejected"
-                        : "Deposit Request Created"}
-
+                      {selectedMethod.network}
                     </strong>
 
-                    <span>
-                      Status:{" "}
-                      {currentStatus}
-                    </span>
-
-                    <span>
-                      Your request ID:{" "}
-                      {createdRequest?.id ||
-                        "Created"}
-                    </span>
-
-                    <small>
-                      {statusMessage()}
-                    </small>
-
-                    {createdRequest?.userId && (
-
-                      <small>
-                        User ID:{" "}
-                        {createdRequest.userId}
-                      </small>
-
-                    )}
-
-                    {createdRequest?.reviewedAt && (
-
-                      <small>
-                        Reviewed:{" "}
-                        {new Date(
-                          createdRequest.reviewedAt
-                        ).toLocaleString()}
-                      </small>
-
-                    )}
-
                   </div>
-
-                ) : (
-
-                  <form
-                    className="local-deposit-form"
-                    onSubmit={
-                      submitDeposit
-                    }
-                  >
-
-                    <div className="form-field">
-
-                      <label>
-                        Amount (NPR)
-                      </label>
-
-                      <input
-                        type="number"
-                        min={
-                          selectedMethod.minAmount ??
-                          500
-                        }
-                        max={
-                          selectedMethod.maxAmount ??
-                          25000
-                        }
-                        step="1"
-                        value={amount}
-                        onChange={(e) =>
-                          setAmount(
-                            e.target.value
-                          )
-                        }
-                        placeholder="Enter amount"
-                      />
-
-                      <small>
-
-                        Minimum: NPR{" "}
-
-                        {Number(
-                          selectedMethod.minAmount ??
-                            500
-                        ).toLocaleString()}
-
-                        {" • "}
-
-                        Maximum: NPR{" "}
-
-                        {Number(
-                          selectedMethod.maxAmount ??
-                            25000
-                        ).toLocaleString()}
-
-                      </small>
-
-                    </div>
-
-                    <div className="quick-amounts">
-
-                      {[
-                        500,
-                        1000,
-                        2000,
-                        3000,
-                        5000,
-                        10000,
-                        20000,
-                        25000,
-                      ].map(
-                        (v) => (
-
-                          <button
-                            key={v}
-                            type="button"
-                            onClick={() =>
-                              setAmount(
-                                String(v)
-                              )
-                            }
-                          >
-                            {v.toLocaleString()}
-                          </button>
-
-                        )
-                      )}
-
-                    </div>
-
-                    <div className="form-field">
-
-                      <label>
-                        Your{" "}
-                        {
-                          selectedMethod.name
-                        }{" "}
-                        Account Number
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          senderAccount
-                        }
-                        onChange={(e) =>
-                          setSenderAccount(
-                            e.target.value
-                          )
-                        }
-                        placeholder="Enter your account number"
-                      />
-
-                    </div>
-
-                    <div className="form-field">
-
-                      <label>
-                        Your{" "}
-                        {
-                          selectedMethod.name
-                        }{" "}
-                        Account Name
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          senderName
-                        }
-                        onChange={(e) =>
-                          setSenderName(
-                            e.target.value
-                          )
-                        }
-                        placeholder="Enter your account name"
-                      />
-
-                    </div>
-
-                    <div className="form-field">
-
-                      <label>
-                        Payment Screenshot
-                      </label>
-
-                      <input
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.pdf"
-                        onChange={(e) => {
-
-                          const file =
-                            e.target.files?.[0];
-
-                          if (
-                            file &&
-                            file.size >
-                              20 *
-                                1024 *
-                                1024
-                          ) {
-
-                            setDepositError(
-                              "Maximum screenshot/file size is 20 MB."
-                            );
-
-                            setScreenshot(
-                              null
-                            );
-
-                            return;
-                          }
-
-                          setScreenshot(
-                            file ||
-                              null
-                          );
-
-                          setDepositError(
-                            ""
-                          );
-
-                        }}
-                      />
-
-                      <small>
-                        JPG, JPEG, PNG or PDF •
-                        Maximum 20 MB
-                      </small>
-
-                    </div>
-
-                    <div className="form-field">
-
-                      <label>
-                        Transaction ID /
-                        Reference No.
-                      </label>
-
-                      <input
-                        type="text"
-                        value={
-                          transactionId
-                        }
-                        onChange={(e) =>
-                          setTransactionId(
-                            e.target.value
-                          )
-                        }
-                        placeholder="Enter transaction ID"
-                      />
-
-                    </div>
-
-                    {depositError && (
-
-                      <div className="deposit-error">
-                        {depositError}
-                      </div>
-
-                    )}
-
-                    <button
-                      type="submit"
-                      className="deposit-submit"
-                      disabled={
-                        isSaving
-                      }
-                    >
-
-                      {isSaving
-                        ? "CREATING..."
-                        : "CONFIRM"}
-
-                    </button>
-
-                    <button
-                      type="button"
-                      className="change-payment-button"
-                      onClick={() =>
-                        setSelectedMethod(
-                          null
-                        )
-                      }
-                    >
-                      Change payment details
-                    </button>
-
-                    <p className="payment-safety-note">
-
-                      Please click here only if you
-                      are unable to pay using the
-                      details provided. The details
-                      can only be changed a limited
-                      number of times.
-
-                    </p>
-
-                    <p className="payment-safety-note">
-
-                      Please do not mention words
-                      related to betting in the
-                      comments to the payment.
-
-                    </p>
-
-                  </form>
-
                 )}
 
-              </>
+                {selectedMethod.wallet_address && (
+                  <div className="wallet-box">
 
+                    <span>
+                      Wallet Address
+                    </span>
+
+                    <div className="wallet-address-row">
+
+                      <strong>
+                        {selectedMethod.wallet_address}
+                      </strong>
+
+                      <button
+                        type="button"
+                        onClick={
+                          copyWalletAddress
+                        }
+                      >
+                        Copy
+                      </button>
+
+                    </div>
+
+                  </div>
+                )}
+
+                {selectedMethod.wallet_address && (
+                  <div className="wallet-warning">
+
+                    ⚠️ Send only through the
+                    <strong>
+                      {" "}
+                      {selectedMethod.network}
+                    </strong>{" "}
+                    network. Sending through
+                    another network may result
+                    in permanent loss of funds.
+
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {/* QR */}
+            {selectedMethod.qr_image && (
+              <div className="payment-qr">
+
+                <span>
+                  Payment QR Code
+                </span>
+
+                <img
+                  src={
+                    selectedMethod.qr_image
+                  }
+                  alt={`${selectedMethod.name} payment QR`}
+                  onError={(event) => {
+                    event.currentTarget.style.display =
+                      "none";
+                  }}
+                />
+
+              </div>
             )}
 
           </div>
 
-        </div>
+          {/* FORM */}
+          <form
+            className="deposit-form"
+            onSubmit={
+              createDepositRequest
+            }
+          >
 
+            {/* AMOUNT */}
+            <div className="form-section">
+
+              <label>
+                Deposit Amount (NPR)
+              </label>
+
+              <div className="amount-limits">
+
+                <span>
+                  Minimum:{" "}
+                  {selectedMethod.min_amount !==
+                  null
+                    ? `${formatNumber(
+                        selectedMethod.min_amount
+                      )} NPR`
+                    : "—"}
+                </span>
+
+                <span>
+                  Maximum:{" "}
+                  {selectedMethod.max_amount !==
+                  null
+                    ? `${formatNumber(
+                        selectedMethod.max_amount
+                      )} NPR`
+                    : "—"}
+                </span>
+
+              </div>
+
+              <input
+                type="number"
+                step="any"
+                min={
+                  selectedMethod.min_amount ??
+                  undefined
+                }
+                max={
+                  selectedMethod.max_amount ??
+                  undefined
+                }
+                value={amount}
+                onChange={(event) =>
+                  setAmount(
+                    event.target.value
+                  )
+                }
+                placeholder="Enter amount"
+              />
+
+              {/* QUICK AMOUNTS */}
+              {selectedMethod.category ===
+                "Local Payment" && (
+                <div className="quick-amounts">
+
+                  {[
+                    500,
+                    1000,
+                    2000,
+                    3000,
+                    5000,
+                    10000,
+                    20000,
+                    25000,
+                  ].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() =>
+                        setAmount(
+                          String(value)
+                        )
+                      }
+                    >
+                      {value.toLocaleString(
+                        "en-NP"
+                      )}
+                    </button>
+                  ))}
+
+                </div>
+              )}
+
+            </div>
+
+            {/* CRYPTO CALCULATION */}
+            {selectedMethod.category ===
+              "Cryptocurrency" && (
+              <div className="crypto-calculation">
+
+                <div>
+
+                  <span>
+                    Current Exchange Rate
+                  </span>
+
+                  <strong>
+                    1 USDT ={" "}
+                    {formatNumber(
+                      exchangeRate,
+                      8
+                    )}{" "}
+                    NPR
+                  </strong>
+
+                </div>
+
+                <div>
+
+                  <span>
+                    You will send approximately
+                  </span>
+
+                  <strong>
+                    {formatNumber(
+                      calculatedCryptoAmount,
+                      8
+                    )}{" "}
+                    {selectedMethod.name
+                      .toLowerCase()
+                      .includes("usdt")
+                      ? "USDT"
+                      : selectedMethod.name}
+                  </strong>
+
+                </div>
+
+                <p>
+                  The displayed exchange rate
+                  may differ slightly from the
+                  final settlement rate.
+                </p>
+
+              </div>
+            )}
+
+            {/* SENDER ACCOUNT */}
+            <div className="form-field">
+
+              <label>
+                Your{" "}
+                {selectedMethod.name}{" "}
+                Account Number
+              </label>
+
+              <input
+                type="text"
+                value={senderAccount}
+                onChange={(event) =>
+                  setSenderAccount(
+                    event.target.value
+                  )
+                }
+                placeholder={`Your ${selectedMethod.name} Account Number`}
+              />
+
+            </div>
+
+            {/* SENDER NAME */}
+            <div className="form-field">
+
+              <label>
+                Your{" "}
+                {selectedMethod.name}{" "}
+                Account Name
+              </label>
+
+              <input
+                type="text"
+                value={senderName}
+                onChange={(event) =>
+                  setSenderName(
+                    event.target.value
+                  )
+                }
+                placeholder={`Your ${selectedMethod.name} Account Name`}
+              />
+
+            </div>
+
+            {/* TRANSACTION ID */}
+            <div className="form-field">
+
+              <label>
+                Transaction ID / Reference No.
+              </label>
+
+              <input
+                type="text"
+                value={transactionId}
+                onChange={(event) =>
+                  setTransactionId(
+                    event.target.value
+                  )
+                }
+                placeholder="Enter transaction ID / reference number"
+              />
+
+            </div>
+
+            {/* SCREENSHOT */}
+            <div className="form-field">
+
+              <label>
+                Payment Screenshot
+              </label>
+
+              <input
+                id="deposit-screenshot"
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                onChange={
+                  handleScreenshotChange
+                }
+              />
+
+              <small>
+                Accepted formats: JPG,
+                JPEG, PNG, PDF. Maximum
+                size: 20 MB.
+              </small>
+
+              {screenshotFile && (
+                <div className="selected-file">
+
+                  ✓{" "}
+                  {screenshotFile.name}
+
+                  {" • "}
+
+                  {Math.ceil(
+                    screenshotFile.size /
+                      1024
+                  )}{" "}
+                  KB
+
+                </div>
+              )}
+
+            </div>
+
+            {/* SAFETY NOTICE */}
+            <div className="safety-notice">
+
+              <strong>
+                Safety notice
+              </strong>
+
+              <p>
+                Please do not include
+                betting-related words or
+                unnecessary sensitive
+                information in payment
+                comments.
+              </p>
+
+            </div>
+
+            {/* USER INFO */}
+            {user && (
+              <div className="deposit-session-info">
+
+                Logged-in account verified.
+                Your deposit request will be
+                linked to your account.
+
+              </div>
+            )}
+
+            {!user && (
+              <div className="deposit-session-info warning">
+
+                Please log in before creating
+                a deposit request.
+
+              </div>
+            )}
+
+            {/* SUBMIT */}
+            <button
+              type="submit"
+              className="create-deposit-button"
+              disabled={
+                submitting ||
+                !user ||
+                !selectedMethod
+              }
+            >
+              {submitting
+                ? "SUBMITTING..."
+                : "CREATE DEPOSIT REQUEST"}
+            </button>
+
+          </form>
+
+        </section>
       )}
 
     </div>
